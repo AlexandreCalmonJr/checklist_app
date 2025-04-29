@@ -137,22 +137,81 @@ finalizarChecklistBtn.addEventListener('click', () => {
 const ctx = assinaturaCanvas.getContext('2d');
 let desenhando = false;
 
-assinaturaCanvas.addEventListener('mousedown', () => desenhando = true);
-assinaturaCanvas.addEventListener('mouseup', () => desenhando = false);
+// Obter posição correta do evento (mouse ou toque)
+function getEventPosition(event) {
+    const rect = assinaturaCanvas.getBoundingClientRect();
+    if (event.touches && event.touches[0]) {
+        return {
+            x: event.touches[0].clientX - rect.left,
+            y: event.touches[0].clientY - rect.top
+        };
+    } else if (event.changedTouches && event.changedTouches[0]) {
+        return {
+            x: event.changedTouches[0].clientX - rect.left,
+            y: event.changedTouches[0].clientY - rect.top
+        };
+    } else {
+        return {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top
+        };
+    }
+}
+
+// Eventos de mouse
+assinaturaCanvas.addEventListener('mousedown', (event) => {
+    desenhando = true;
+    const pos = getEventPosition(event);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+});
+
+assinaturaCanvas.addEventListener('mouseup', () => {
+    desenhando = false;
+    ctx.beginPath(); // evita rabiscos
+});
+
 assinaturaCanvas.addEventListener('mousemove', desenhar);
 
+// Eventos de toque
+assinaturaCanvas.addEventListener('touchstart', (event) => {
+    desenhando = true;
+    const pos = getEventPosition(event);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    event.preventDefault();
+});
+
+assinaturaCanvas.addEventListener('touchend', () => {
+    desenhando = false;
+    ctx.beginPath(); // evita rabiscos
+});
+
+assinaturaCanvas.addEventListener('touchmove', (event) => {
+    if (!desenhando) return;
+    const pos = getEventPosition(event);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    event.preventDefault(); // evita scroll da tela
+});
+
+// Função para desenhar com mouse
 function desenhar(event) {
     if (!desenhando) return;
+    const pos = getEventPosition(event);
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.strokeStyle = 'black';
 
-    ctx.lineTo(event.offsetX, event.offsetY);
+    ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(event.offsetX, event.offsetY);
+    ctx.moveTo(pos.x, pos.y);
 }
 
+// Botão limpar assinatura
 limparAssinaturaBtn.addEventListener('click', () => {
     ctx.clearRect(0, 0, assinaturaCanvas.width, assinaturaCanvas.height);
     ctx.beginPath();
