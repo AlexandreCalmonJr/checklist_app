@@ -361,7 +361,7 @@ gerarPDFBtn.addEventListener('click', () => {
     // Cabeçalhos da tabela
     const colunas = [
         "Setor", "Local",
-        "Navegador", "SAMWEB", "Arya", "Impressão",
+        "Navegador", "Hospitalar/SAMWEB", "Arya", "Impressão",
         "NDD", "Leitor Digital", "Telefonia", "Acesso Remoto", "Wi-Fi", "Observações"
     ];
 
