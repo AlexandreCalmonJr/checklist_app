@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exibir Checklists - Hospital</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Relatório de Checklists</h1>
+        
+        <!-- Tabela para exibir os dados -->
+        <table id="checklistTable">
+            <thead>
+                <tr>
+                    <th>Setor</th>
+                    <th>Local</th>
+                    <th>Itens</th>
+                    <th>Observações</th>
+                    <th>Assinatura</th>
+                </tr>
+            </thead>
+            <tbody id="checklistBody">
+                <!-- Dados dos checklists serão inseridos aqui -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Carregar e exibir os checklists armazenados
+        window.onload = function() {
+            const dadosSalvos = JSON.parse(localStorage.getItem('checklists')) || [];
+
+            const tabela = document.getElementById('checklistBody');
+
+            // Se não houver dados salvos, exibe uma mensagem
+            if (dadosSalvos.length === 0) {
+                tabela.innerHTML = "<tr><td colspan='5'>Nenhum checklist encontrado.</td></tr>";
+            } else {
+                // Exibe os dados na tabela
+                dadosSalvos.forEach(dado => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${dado.setor}</td>
+                        <td>${dado.local}</td>
+                        <td>
+                            <ul>
+                                ${dado.itensChecklist.map(item => `<li>${item.nome}: ${item.status}</li>`).join('')}
+                            </ul>
+                        </td>
+                        <td>${dado.observacoes || 'Nenhuma'}</td>
+                        <td><img src="${dado.assinatura}" alt="Assinatura" width="100" height="50"></td>
+                    `;
+                    tabela.appendChild(tr);
+                });
+            }
+        };
+    </script>
+</body>
+</html>
