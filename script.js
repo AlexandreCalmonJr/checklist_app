@@ -1,4 +1,5 @@
 // script.js ajustado com melhorias e painel final
+// Removed duplicate declaration of checklistForm
 
 const locaisPorSetor = {
     "Emergência Adulta": [
@@ -188,24 +189,40 @@ salvarSalaBtn.addEventListener('click', () => {
         chamado: document.getElementById('numeroChamado').value,
         setor: setorSelect.value,
         local: localSelect.value,
-        computador: checklistForm.computador.value,
-        sistema: checklistForm.sistema.value,
-        impressora: checklistForm.impressora.value,
-        internet: checklistForm.internet.value,
+        navegador_atualizado: checklistForm.navegador_atualizado.value,
+        samweb: checklistForm.samweb.value,
+        arya: checklistForm.arya.value,
+        impressao: checklistForm.impressao.value,
+        ndd: checklistForm.ndd.value,
+        leitor_digital: checklistForm.leitor_digital.value,
+        telefonia: checklistForm.telefonia.value,
+        acesso_remoto: checklistForm.acesso_remoto.value,
+        wifi: checklistForm.wifi.value,
         observacoes: document.getElementById('observacoes').value
     };
 
-    registrosChecklist.push(registro);
+    // Verifica se o registro já existe para evitar duplicação
+    const index = registrosChecklist.findIndex(r =>
+        r.setor === registro.setor && r.local === registro.local
+    );
+
+    if (index !== -1) {
+        registrosChecklist[index] = registro; // Atualiza se já existe
+    } else {
+        registrosChecklist.push(registro); // Adiciona novo
+    }
+
     localStorage.setItem('registrosChecklist', JSON.stringify(registrosChecklist));
 
     // Feedback visual
     salvarSalaBtn.disabled = true;
-    feedbackSalvar.textContent = 'Sala salva!';
+    feedbackSalvar.textContent = '✅ Sala salva!';
     setTimeout(() => {
         salvarSalaBtn.disabled = false;
         feedbackSalvar.textContent = '';
     }, 1500);
 });
+
 
 finalizarChecklistBtn.addEventListener('click', () => {
     alert('Checklist finalizado! Assine para poder gerar o PDF.');
@@ -325,35 +342,62 @@ gerarPDFBtn.addEventListener('click', () => {
     }
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: "landscape" }); // 👈 paisagem
 
+    // Título
     let y = 20;
     doc.setFontSize(16);
-    doc.text("Relatório de Checklist - Hospital", 20, y);
+    doc.text("Relatório de Checklist - Hospital Teresa de Lisieux", 20, y);
     y += 10;
 
-    registrosChecklist.forEach((registro, index) => {
-        doc.setFontSize(12);
-        doc.text(`Sala ${index + 1}: ${registro.setor} - ${registro.local}`, 20, y);
-        y += 7;
-        doc.text(`Data: ${registro.data} | Técnico: ${registro.tecnico} | Chamado: ${registro.chamado}`, 20, y);
-        y += 7;
-        doc.text(`Computador: ${registro.computador} | Sistema: ${registro.sistema}`, 20, y);
-        y += 7;
-        doc.text(`Impressora: ${registro.impressora} | Internet: ${registro.internet}`, 20, y);
-        y += 7;
-        doc.text(`Observações: ${registro.observacoes || 'Nenhuma'}`, 20, y);
-        y += 15;
+    // Cabeçalho com técnico, data e chamado
+    const tecnico = document.getElementById('nomeTecnico').value;
+    const dataAtual = new Date().toLocaleDateString();
+    const chamado = document.getElementById('numeroChamado').value;
+    doc.setFontSize(12);
+    doc.text(`Data: ${dataAtual} | Técnico: ${tecnico} | Chamado: ${chamado}`, 20, y);
+    y += 10;
 
-        if (y > 270) {
-            doc.addPage();
-            y = 20;
-        }
+    // Cabeçalhos da tabela
+    const colunas = [
+        "Setor", "Local",
+        "Navegador", "SAMWEB", "Arya", "Impressão",
+        "NDD", "Leitor Digital", "Telefonia", "Acesso Remoto", "Wi-Fi", "Observações"
+    ];
+
+    // Linhas de dados
+    const linhas = registrosChecklist.map(reg => [
+        reg.setor,
+        reg.local,
+        reg.navegador_atualizado,
+        reg.samweb,
+        reg.arya,
+        reg.impressao,
+        reg.ndd,
+        reg.leitor_digital,
+        reg.telefonia,
+        reg.acesso_remoto,
+        reg.wifi,
+        reg.observacoes || "Nenhuma"
+    ]);
+
+    // Tabela
+    doc.autoTable({
+        startY: y + 5,
+        head: [colunas],
+        body: linhas,
+        styles: { fontSize: 9, cellPadding: 2 },
+        headStyles: { fillColor: [52, 73, 94], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 245, 245] }
     });
 
-    // Assinatura no final
+    // Assinatura
     const imgData = assinaturaCanvas.toDataURL('image/png');
-    doc.addImage(imgData, 'PNG', 20, y + 10, 100, 50);
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.text("Assinatura do Responsável:", 20, finalY);
+    doc.addImage(imgData, 'PNG', 20, finalY + 2, 100, 40);
 
     doc.save('Relatorio_Checklist_Hospital.pdf');
 });
+
+
