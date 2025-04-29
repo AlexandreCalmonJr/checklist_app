@@ -1,4 +1,4 @@
-// script.js ajustado para rastrear salas visitadas por setor
+// script.js ajustado com melhorias e painel final
 
 const locaisPorSetor = {
     "Emergência Adulta": ["Consultório 1", "Consultório 2", "Consultório 3", "Consultório 4", "Consultório 5"],
@@ -23,10 +23,9 @@ const listaSalasVisitadas = document.getElementById('listaSalasVisitadas');
 const painelFinal = document.getElementById('painelFinal');
 const feedbackSalvar = document.createElement('span'); // Elemento para feedback de salvar
 
-let salasVisitadasPorSetor = JSON.parse(localStorage.getItem('salasVisitadasPorSetor')) || {};
+let salasVisitadas = JSON.parse(localStorage.getItem('salasVisitadas')) || [];
 let registrosChecklist = JSON.parse(localStorage.getItem('registrosChecklist')) || [];
 let salasDisponiveis = [];
-let setorAtual = "";
 
 // Inicialização do feedback de salvar
 feedbackSalvar.style.marginLeft = '10px';
@@ -44,82 +43,72 @@ for (const setor in locaisPorSetor) {
 }
 
 function atualizarSalasDisponiveis(setor) {
-    setorAtual = setor;
-    localSelect.innerHTML = '<option value="">Selecione o Local</option>';
     salasDisponiveis = [];
-
     if (locaisPorSetor[setor]) {
-        const visitadasNoSetor = salasVisitadasPorSetor[setor] || [];
         locaisPorSetor[setor].forEach(local => {
-            if (!visitadasNoSetor.includes(local)) {
+            if (!salasVisitadas.includes(local)) {
                 salasDisponiveis.push(local);
-                const option = document.createElement('option');
-                option.value = local;
-                option.textContent = local;
-                localSelect.appendChild(option);
             }
         });
     }
-    atualizarListaSalas();
 }
 
 setorSelect.addEventListener('change', () => {
     const setor = setorSelect.value;
+    localSelect.innerHTML = '<option value="">Selecione o Local</option>';
     atualizarSalasDisponiveis(setor);
+
+    salasDisponiveis.forEach(local => {
+        const option = document.createElement('option');
+        option.value = local;
+        option.textContent = local;
+        localSelect.appendChild(option);
+    });
 });
 
 localSelect.addEventListener('change', (event) => {
     const salaSelecionada = event.target.value;
-    if (salaSelecionada && setorAtual) {
-        marcarSalaVisitada(setorAtual, salaSelecionada);
-        atualizarSalasDisponiveis(setorAtual); // Recalcula e atualiza a lista de locais
+    if (salaSelecionada) {
+        marcarSalaVisitada(salaSelecionada);
+        atualizarListaSalas();
+        atualizarSalasDisponiveis(setorSelect.value); // Recalcula as salas disponíveis ao selecionar manualmente
     }
 });
 
-function marcarSalaVisitada(setor, sala) {
-    if (!salasVisitadasPorSetor[setor]) {
-        salasVisitadasPorSetor[setor] = [];
-    }
-    if (!salasVisitadasPorSetor[setor].includes(sala)) {
-        salasVisitadasPorSetor[setor].push(sala);
-        localStorage.setItem('salasVisitadasPorSetor', JSON.stringify(salasVisitadasPorSetor));
+function marcarSalaVisitada(sala) {
+    if (!salasVisitadas.includes(sala)) {
+        salasVisitadas.push(sala);
+        localStorage.setItem('salasVisitadas', JSON.stringify(salasVisitadas));
     }
 }
 
 function selecionarProximaSala() {
-    if (setorAtual && salasDisponiveis.length > 0) {
-        const proximaSala = salasDisponiveis[0];
+    if (salasDisponiveis.length > 0) {
+        const proximaSala = salasDisponiveis[0]; // Pega a primeira sala disponível
         localSelect.value = proximaSala;
-        marcarSalaVisitada(setorAtual, proximaSala);
-        atualizarSalasDisponiveis(setorAtual);
-    } else if (setorAtual) {
-        alert(`Todas as salas do setor ${setorAtual} foram visitadas.`);
+        marcarSalaVisitada(proximaSala);
+        atualizarListaSalas();
+        atualizarSalasDisponiveis(setorSelect.value); // Recalcula após selecionar
     } else {
-        alert("Por favor, selecione um setor.");
+        alert("Todas as salas deste setor foram visitadas.");
     }
 }
 
 function atualizarListaSalas() {
     listaSalasVisitadas.innerHTML = "<h3>Salas Visitadas:</h3>";
-    if (setorAtual && salasVisitadasPorSetor[setorAtual]) {
-        salasVisitadasPorSetor[setorAtual].forEach((sala) => {
-            const li = document.createElement('li');
-            li.textContent = sala;
-            listaSalasVisitadas.appendChild(li);
-        });
-    }
+    salasVisitadas.forEach((sala) => {
+        const li = document.createElement('li');
+        li.textContent = sala;
+        listaSalasVisitadas.appendChild(li);
+    });
 }
 
 salvarSalaBtn.addEventListener('click', () => {
-    if (!setorAtual || !localSelect.value) {
-        alert("Por favor, selecione o setor e o local.");
-        return;
-    }
     const registro = {
         data: document.getElementById('dataCheck').value,
         tecnico: document.getElementById('nomeTecnico').value,
         chamado: document.getElementById('numeroChamado').value,
-        setor: setorAtual,
+        setor: setorSelect.value,
         local: localSelect.value,
         computador: checklistForm.computador.value,
         sistema: checklistForm.sistema.value,
@@ -141,35 +130,7 @@ salvarSalaBtn.addEventListener('click', () => {
 });
 
 finalizarChecklistBtn.addEventListener('click', () => {
-    if (!setorAtual || !localSelect.value) {
-        alert("Por favor, selecione o setor e o local.");
-        return;
-    }
-    // Salvar o registro atual antes de finalizar
-    const registroFinal = {
-        data: document.getElementById('dataCheck').value,
-        tecnico: document.getElementById('nomeTecnico').value,
-        chamado: document.getElementById('numeroChamado').value,
-        setor: setorAtual,
-        local: localSelect.value,
-        computador: checklistForm.computador.value,
-        sistema: checklistForm.sistema.value,
-        impressora: checklistForm.impressora.value,
-        internet: checklistForm.internet.value,
-        observacoes: document.getElementById('observacoes').value
-    };
-
-    const indexRegistroExistente = registrosChecklist.findIndex(reg => reg.local === localSelect.value && reg.setor === setorAtual);
-
-    if (indexRegistroExistente === -1) {
-        registrosChecklist.push(registroFinal);
-        localStorage.setItem('registrosChecklist', JSON.stringify(registrosChecklist));
-    } else {
-        registrosChecklist[indexRegistroExistente] = registroFinal;
-        localStorage.setItem('registrosChecklist', JSON.stringify(registrosChecklist));
-    }
-
-    alert('Checklist finalizado para este local! Assine para poder gerar o PDF.');
+    alert('Checklist finalizado! Assine para poder gerar o PDF.');
     painelFinal.style.display = 'block';
 });
 
@@ -204,11 +165,11 @@ function assinaturaEstaVazia() {
 
 resetarChecklistBtn.addEventListener('click', () => {
     if (confirm('Tem certeza que deseja resetar o checklist?')) {
-        localStorage.removeItem('salasVisitadasPorSetor');
+        localStorage.removeItem('salasVisitadas');
         localStorage.removeItem('registrosChecklist');
-        salasVisitadasPorSetor = {};
+        salasVisitadas = [];
         registrosChecklist = [];
-        atualizarSalasDisponiveis(setorAtual);
+        atualizarListaSalas();
         painelFinal.style.display = 'none'; // Esconde o painel de assinatura ao resetar
         alert('Checklist resetado.');
     }
@@ -218,10 +179,7 @@ proximaSalaBtn.addEventListener('click', () => {
     selecionarProximaSala();
 });
 
-// Inicializa a lista de salas visitadas se um setor já estiver selecionado
-if (setorSelect.value) {
-    atualizarSalasDisponiveis(setorSelect.value);
-}
+atualizarListaSalas(); // Carrega a lista de salas visitadas na inicialização
 
 gerarPDFBtn.addEventListener('click', () => {
     if (assinaturaEstaVazia()) {
