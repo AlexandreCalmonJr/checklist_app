@@ -73,7 +73,7 @@ const locaisPorSetor = {
     "Anderson Conceição",
     "Adilson Santos",
     "Carlos Alan",
-    "Flavio Torres"
+    "Flavio Torres",
     "Ramon Silva",
     "Rodrigo Costa",
   ];
