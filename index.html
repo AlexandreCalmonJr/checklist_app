@@ -10,7 +10,7 @@
 <body>
 
 <div class="container">
-    <h1>Checklist de Consultórios - Hospital</h1>
+    <h1>Checklist de Consultórios - Hospital Teresa de Lisieux</h1>
 
     <form id="checklistForm">
         <fieldset>
@@ -20,8 +20,10 @@
                 <input type="date" id="dataCheck" required>
             </div>
             <div class="form-group">
-                <label for="nomeTecnico">Nome do Técnico:</label>
-                <input type="text" id="nomeTecnico" required placeholder="Nome do Técnico">
+                <label for="setor">Nome Tecnico:</label>
+                <select id="nomeTecnico" required>
+                    <option value="">Selecione o Tecnico</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="numeroChamado">Número do Chamado:</label>
@@ -43,34 +45,90 @@
 
         <fieldset>
             <legend>Itens do Checklist</legend>
+          
             <div class="form-group">
-                <label>Computador funcionando?</label>
-                <select name="computador" required>
-                    <option value="Sim">Sim</option>
-                    <option value="Não">Não</option>
-                </select>
+              <label>Navegador Atualizado?</label>
+              <select name="navegador_atualizado" required>
+                <option value=""></option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
             </div>
+          
             <div class="form-group">
-                <label>Sistema Hospitalar funcionando?</label>
-                <select name="sistema" required>
-                    <option value="Sim">Sim</option>
-                    <option value="Não">Não</option>
-                </select>
+              <label>Sistema Hospitalar / SAMWEB funcionando?</label>
+              <select name="samweb" required>
+                <option value=""></option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
             </div>
+          
             <div class="form-group">
-                <label>Impressora funcionando?</label>
-                <select name="impressora" required>
-                    <option value="Sim">Sim</option>
-                    <option value="Não">Não</option>
-                </select>
+              <label>Sistema Arya funcionando?</label>
+              <select name="arya" required>
+                <option value=""></option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
             </div>
+          
             <div class="form-group">
-                <label>Internet funcionando?</label>
-                <select name="internet" required>
-                    <option value="Sim">Sim</option>
-                    <option value="Não">Não</option>
-                </select>
+              <label>Impressão funcionando?</label>
+              <select name="impressao" required>
+                <option value=""></option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
             </div>
+    
+            <div class="form-group">
+              <label>NDD funcionando?</label>
+              <select name="ndd" required>
+                <option value=""></option>
+                <option value="Rede">Rede</option>
+                <option value="USB">USB</option>
+              </select>
+            </div>
+          
+            <div class="form-group">
+              <label>Leitor de Digital funcionando?</label>
+              <select name="leitor_digital" required>
+                <option value=""></option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
+            </div>
+          
+            <div class="form-group">
+              <label>Telefonia funcionando?</label>
+              <select name="telefonia" required>
+                <option value=""></option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
+            </div>
+          
+            <div class="form-group">
+              <label>Acesso Remoto funcionando?</label>
+              <select name="acesso_remoto" required>
+                <option value=""></option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+                <label>Wifi funcionando?</label>
+                <select name="acesso_remoto" required>
+                  <option value=""></option>
+                  <option value="Sim">Sim</option>
+                  <option value="Não">Não</option>
+                </select>
+              </div>
+          </fieldset>
+          
+              
 
             <div class="form-group">
                 <label for="observacoes">Observações:</label>

@@ -1,14 +1,92 @@
 // script.js ajustado com melhorias e painel final
 
 const locaisPorSetor = {
-    "Emergência Adulta": ["Consultório 1", "Consultório 2", "Consultório 3", "Consultório 4", "Consultório 5"],
-    "Emergência Pediátrica": ["Consultório 1", "Consultório 2", "Consultório 3"],
-    "Ortopedia": ["Consultório 1", "Consultório 2"],
-    "Obstetrícia": ["Consultório 1", "Consultório 2"],
-    "Posto de Enfermagem": ["Adulto", "Pediatria", "Obstetrícia"],
-    "Recepção": ["Recepção Adulto", "Recepção Pediatria", "Recepção Obstetrícia"]
-};
+    "Emergência Adulta": [
+      "PAINEL Adulto",
+      "TOTEM EMG ADT 01",
+      "TOTEM EMG ADT 02",
+      "TOTEM EMG ADT 03",
+      "TOTEM EMG ADT 04",
+      "TOTEM EMG ADT 05",
+      "RECEPÇÃO ADULTO Computador 1",
+      "RECEPÇÃO ADULTO Computador 2",
+      "RECEPÇÃO ADULTO Computador 1 Supervisão",
+      "RECEPÇÃO ADULTO Computador 2 Supervisão",
+      "AUTORIZAÇÃO Computador 1",
+      "AUTORIZAÇÃO Computador 2",
+      "AUTORIZAÇÃO Computador 3",
+      ...Array.from({ length: 17 }, (_, i) => `CONSULTÓRIO ADULTO  ${i + 1}`),
+      "Coleta ADT 01",
+      "Coleta ADT 02",
+      "ALA VERDE - ALA B Computador 1 Médico",
+      "ALA VERDE - ALA B Computador 2 Médico",
+      "ALA VERDE - ALA B Computador 3 Médico",
+      "ALA VERDE - ALA B Computador 4 Posto",
+      "ALA VERDE - ALA B Computador 5 Posto",
+      "Estabilização PC 1",
+      "Estabilização PC 2",
+      "ECG",
+      "Farmácia ADT 01",
+      "Farmácia ADT 02",
+      "ALA AMARELA - ALA C Computador 1",
+      "ALA AMARELA - ALA C Computador 2"
+    ],
+    "Emergência Pediátrica": [
+      "PAINEL Pediatria",
+      "TOTEM EMG PED 01",
+      "RECEPÇÃO PEDIÁTRICA Computador 1",
+      "RECEPÇÃO PEDIÁTRICA Computador 2",
+      "POSTO PEDIATRIA Computador 1",
+      "POSTO PEDIATRIA Computador 2",
+      "MÉDICO PEDIÁTRICO 1",
+      "MÉDICO PEDIÁTRICO 2",
+      "POSTO PEDIÁTRICO OBS3 - Computador 1",
+      "POSTO PEDIÁTRICO OBS3 - Computador 2",
+      ...Array.from({ length: 8 }, (_, i) => `CONSULTÓRIOS PEDIÁTRICOS  ${i + 1}`),
+      "Coleta Ped"
+    ],
+    "Ortopedia": [
+      "PAINEL Traumatologia",
+      "CONSULTÓRIOS TRAUMATOLOGIA  1",
+      "CONSULTÓRIOS TRAUMATOLOGIA  2",
+      "CONSULTÓRIOS TRAUMATOLOGIA  3",
+      "POSTO TRAUMA (SALA DE GESSO) Computador 1",
+      "RAIO X Computador 1"
+    ],
+    "Obstetrícia": [
+      "PAINEL Obstetrícia",
+      "RECEPÇÃO OBSTÉTRICA / TRAUMA Computador 1",
+      "POSTO OBSTÉTRICO Computador 1",
+      "POSTO OBSTÉTRICO Computador 2",
+      "ADM Painel Sinais Vitais",
+      "Farmácia Obst / Ped",
+      "CONSULTÓRIOS OBSTÉTRICOS  1",
+      "CONSULTÓRIOS OBSTÉTRICOS  2",
+      "CONSULTÓRIOS OBSTÉTRICOS  3"
+    ],
+    
+  };
+  const tecnicos = [
+    "Alexandre Calmon",
+    "Alexandre Pinho",
+    "Anderson Conceição",
+    "Adilson Santos",
+    "Carlos Alan",
+    "Ramon Silva",
+    "Rodrigo Costa",
+  ];
+  
+  const nomeTecnico = document.getElementById('nomeTecnico');
 
+  // Preenche o select com os nomes dos técnicos
+  tecnicos.forEach(tecnico => {
+    const option = document.createElement('option');
+    option.value = tecnico;
+    option.textContent = tecnico;
+    nomeTecnico.appendChild(option);
+  });
+
+const tecnico = document.getElementById('nomeTecnico');
 const setorSelect = document.getElementById('setor');
 const localSelect = document.getElementById('local');
 const checklistForm = document.getElementById('checklistForm');
