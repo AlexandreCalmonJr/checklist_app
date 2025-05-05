@@ -1,158 +1,143 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+  var gk_isXlsx = false;
+  var gk_xlsxFileLookup = {};
+  var gk_fileData = {};
+  function filledCell(cell) {
+    return cell !== '' && cell != null;
+  }
+  function loadFileData(filename) {
+  if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+      try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+
+          // Convert sheet to JSON to filter blank rows
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          // Filter out blank rows (rows where all cells are empty, null, or undefined)
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+
+          // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          // Fallback
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+
+          // Convert filtered JSON back to CSV
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+      } catch (e) {
+          console.error(e);
+          return "";
+      }
+  }
+  return gk_fileData[filename] || "";
+  }
+  </script><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Checklist Hospitalar</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Checklist Hospitalar</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4">
 
-    <div class="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-md">
-        <!-- Cabeçalho com a logo ao lado do título -->
-        <div class="flex items-center justify-start mb-6">
-          <!-- Logo -->
-          <img src="https://www2.hapvida.com.br/image/layout_set_logo?img_id=7724304&t=1745437574140" alt="Logo do Hospital" class="w-40 h-25 mr-4">
-          <!-- Título -->
-          <h1 class="text-2xl font-bold text-blue-700">Checklist de Emergência - Hospital Teresa de Lisieux</h1>
-        </div>
-
-    <form id="checklistForm" class="space-y-6">
-      <fieldset class="border border-gray-300 rounded-xl p-4">
-        <legend class="text-lg font-semibold text-blue-600 px-2">Dados do Checklist</legend>
-
-        <div class="grid gap-4">
-          <div>
-            <label class="block font-semibold mb-1" for="dataCheck">Data do Checklist:</label>
-            <input type="date" id="dataCheck" required class="w-full border rounded-lg px-3 py-2" />
-          </div>
-
-          <div>
-            <label class="block font-semibold mb-1" for="nomeTecnico">Nome Técnico:</label>
-            <select id="nomeTecnico" required class="w-full border rounded-lg px-3 py-2">
-              <option value="">Selecione o Técnico</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block font-semibold mb-1" for="numeroChamado">Número do Chamado:</label>
-            <input type="text" id="numeroChamado" required placeholder="Número do Chamado" class="w-full border rounded-lg px-3 py-2"/>
-          </div>
-
-          <div>
-            <label class="block font-semibold mb-1" for="setor">Setor:</label>
-            <select id="setor" required class="w-full border rounded-lg px-3 py-2">
-              <option value="">Selecione o Setor</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block font-semibold mb-1" for="local">Local:</label>
-            <select id="local" required class="w-full border rounded-lg px-3 py-2">
-              <option value="">Selecione o Local</option>
-            </select>
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset class="border border-gray-300 rounded-xl p-4">
-        <legend class="text-lg font-semibold text-blue-600 px-2">Itens do Checklist</legend>
-
-        <div class="grid gap-4">
-          <!-- Reutilizável para cada item -->
-          <template id="itemTemplate">
-            <div class="space-y-2">
-              <label class="block font-semibold mb-1">TÍTULO</label>
-              <div class="space-x-4">
-                <label><input type="radio" name="NOME" value="Sim" required /> Sim</label>
-                <label><input type="radio" name="NOME" value="Não" /> Não</label>
-              </div>
-            </div>
-          </template>
-
-          <!-- Itens individuais -->
-          <div>
-            <label class="block font-semibold">Navegador Atualizado?</label>
-            <label class="mr-4"><input type="radio" name="navegador_atualizado" value="Sim" required /> Sim</label>
-            <label><input type="radio" name="navegador_atualizado" value="Não" /> Não</label>
-          </div>
-
-          <div>
-            <label class="block font-semibold">Sistema Hospitalar / SAMWEB funcionando?</label>
-            <label class="mr-4"><input type="radio" name="samweb" value="Sim" required /> Sim</label>
-            <label><input type="radio" name="samweb" value="Não" /> Não</label>
-          </div>
-
-          <div>
-            <label class="block font-semibold">Sistema Arya funcionando?</label>
-            <label class="mr-4"><input type="radio" name="arya" value="Sim" required /> Sim</label>
-            <label><input type="radio" name="arya" value="Não" /> Não</label>
-          </div>
-
-          <div>
-            <label class="block font-semibold">Impressão funcionando?</label>
-            <label class="mr-4"><input type="radio" name="impressao" value="Sim" required /> Sim</label>
-            <label><input type="radio" name="impressao" value="Não" /> Não</label>
-          </div>
-
-          <div>
-            <label class="block font-semibold">NDD funcionando?</label>
-            <label class="mr-4"><input type="radio" name="ndd" value="Rede" required /> Rede</label>
-            <label><input type="radio" name="ndd" value="USB" /> USB</label>
-          </div>
-
-          <div>
-            <label class="block font-semibold">Leitor de Digital funcionando?</label>
-            <label class="mr-4"><input type="radio" name="leitor_digital" value="Sim" required /> Sim</label>
-            <label><input type="radio" name="leitor_digital" value="Não" /> Não</label>
-          </div>
-
-          <div>
-            <label class="block font-semibold">Telefonia funcionando?</label>
-            <label class="mr-4"><input type="radio" name="telefonia" value="Sim" required /> Sim</label>
-            <label><input type="radio" name="telefonia" value="Não" /> Não</label>
-          </div>
-
-          <div>
-            <label class="block font-semibold">Acesso Remoto funcionando?</label>
-            <label class="mr-4"><input type="radio" name="acesso_remoto" value="Sim" required /> Sim</label>
-            <label><input type="radio" name="acesso_remoto" value="Não" /> Não</label>
-          </div>
-
-          <div>
-            <label class="block font-semibold">Wifi funcionando?</label>
-            <label class="mr-4"><input type="radio" name="wifi" value="Sim" required /> Sim</label>
-            <label><input type="radio" name="wifi" value="Não" /> Não</label>
-          </div>
-        </div>
-      </fieldset>
-
-      <div>
-        <label class="block font-semibold mb-1" for="observacoes">Observações:</label>
-        <textarea id="observacoes" rows="4" placeholder="Anote algo importante..." class="w-full border rounded-lg px-3 py-2"></textarea>
-      </div>
-
-      <div class="flex flex-wrap gap-3 justify-center">
-        <button type="button" id="salvarSalaBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Salvar Sala</button>
-        <button type="button" id="proximaSalaBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl">Próxima Sala</button>
-        <button type="button" id="finalizarChecklistBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl">Finalizar Checklist</button>
-        <button type="button" id="resetarChecklist" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl">Resetar Checklist</button>
-      </div>
-
-      <div id="painelFinal" class="mt-6 hidden">
-        <h3 class="text-lg font-bold text-gray-700 mb-2">Finalização do Checklist</h3>
-        <p class="mb-2">Assinatura do Responsável:</p>
-        <canvas id="assinatura" width="300" height="150" class="border border-gray-400 rounded-lg mb-2"></canvas>
-        <button type="button" id="limparAssinatura" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl mr-2">Limpar Assinatura</button>
-        <button type="button" id="gerarPDF" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Gerar PDF</button>
-      </div>
-
-      <ul id="listaSalasVisitadas" class="mt-6 border-t pt-4 text-sm text-gray-600 list-disc list-inside space-y-1"></ul>
-    </form>
+<div class="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-md">
+  <!-- Cabeçalho com a logo ao lado do título -->
+  <div class="flex items-center justify-start mb-6">
+    <!-- Logo -->
+    <img src="https://www2.hapvida.com.br/image/layout_set_logo?img_id=7724304&t=1745437574140" alt="Logo do Hospital" class="w-40 h-25 mr-4">
+    <!-- Título -->
+    <h1 class="text-2xl font-bold text-blue-700">Checklist de Emergência - Hospital Teresa de Lisieux</h1>
   </div>
 
-  <script src="script.js"></script>
+<form id="checklistForm" class="space-y-6">
+<fieldset class="border border-gray-300 rounded-xl p-4">
+  <legend class="text-lg font-semibold text-blue-600 px-2">Dados do Checklist</legend>
+
+  <div class="grid gap-4">
+    <div>
+      <label class="block font-semibold mb-1" for="tipoChecklist">Tipo de Checklist:</label>
+      <select id="tipoChecklist" required class="w-full border rounded-lg px-3 py-2">
+        <option value="">Selecione o Tipo</option>
+        <option value="centroCirurgico">Centro Cirúrgico</option>
+        <option value="racks">Racks</option>
+        <option value="emergencia">Emergência</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block font-semibold mb-1" for="dataCheck">Data do Checklist:</label>
+      <input type="date" id="dataCheck" required class="w-full border rounded-lg px-3 py-2" />
+    </div>
+
+    <div>
+      <label class="block font-semibold mb-1" for="nomeTecnico">Nome Técnico:</label>
+      <select id="nomeTecnico" required class="w-full border rounded-lg px-3 py-2">
+        <option value="">Selecione o Técnico</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block font-semibold mb-1" for="numeroChamado">Número do Chamado:</label>
+      <input type="text" id="numeroChamado" required placeholder="Número do Chamado" class="w-full border rounded-lg px-3 py-2"/>
+    </div>
+
+    <div>
+      <label class="block font-semibold mb-1" for="setor">Setor:</label>
+      <select id="setor" required class="w-full border rounded-lg px-3 py-2">
+        <option value="">Selecione o Setor</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block font-semibold mb-1" for="local">Local:</label>
+      <select id="local" required class="w-full border rounded-lg px-3 py-2">
+        <option value="">Selecione o Local</option>
+      </select>
+    </div>
+  </div>
+</fieldset>
+
+<fieldset class="border border-gray-300 rounded-xl p-4">
+  <legend class="text-lg font-semibold text-blue-600 px-2">Itens do Checklist</legend>
+  <div id="itensChecklist" class="grid gap-4">
+    <!-- Itens do checklist serão preenchidos dinamicamente via JavaScript -->
+  </div>
+</fieldset>
+
+<div>
+  <label class="block font-semibold mb-1" for="observacoes">Observações:</label>
+  <textarea id="observacoes" rows="4" placeholder="Anote algo importante..." class="w-full border rounded-lg px-3 py-2"></textarea>
+</div>
+
+<div class="flex flex-wrap gap-3 justify-center">
+  <button type="button" id="salvarSalaBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Salvar Sala</button>
+  <button type="button" id="proximaSalaBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl">Próxima Sala</button>
+  <button type="button" id="finalizarChecklistBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl">Finalizar Checklist</button>
+  <button type="button" id="resetarChecklist" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl">Resetar Checklist</button>
+</div>
+
+<div id="painelFinal" class="mt-6 hidden">
+  <h3 class="text-lg font-bold text-gray-700 mb-2">Finalização do Checklist</h3>
+  <p class="mb-2">Assinatura do Responsável:</p>
+  <canvas id="assinatura" width="300" height="150" class="border border-gray-400 rounded-lg mb-2"></canvas>
+  <button type="button" id="limparAssinatura" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl mr-2">Limpar Assinatura</button>
+  <button type="button" id="gerarPDF" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Gerar PDF</button>
+</div>
+
+<ul id="listaSalasVisitadas" class="mt-6 border-t pt-4 text-sm text-gray-600 list-disc list-inside space-y-1"></ul>
+</form>
+</div>
+
+<script src="script.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93b0c83e3c35add1',t:'MTc0NjQ1MzgxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
