@@ -450,6 +450,14 @@ proximaSalaBtn.addEventListener('click', () => {
 atualizarListaSalas();
 
 gerarPDFBtn.addEventListener('click', () => {
+    const nomeResponsavel = document.getElementById('nomeResponsavel').value.trim();
+    const matriculaResponsavel = document.getElementById('matriculaResponsavel').value.trim();
+
+    if (!nomeResponsavel || !matriculaResponsavel) {
+        alert('Por favor, preencha o Nome do Responsável e a Matrícula do Responsável.');
+        return;
+    }
+
     if (assinaturaEstaVazia()) {
         alert('Por favor, assine antes de gerar o PDF.');
         return;
@@ -487,7 +495,7 @@ gerarPDFBtn.addEventListener('click', () => {
 
         let colunas, linhas = [];
         if (tipo === "centroCirurgico") {
-            colunas = ["Setor", "Local", "Hospitalar/SIGA", " Arya", "Impressão", "Leitor Digital", "Acesso Remoto", "Sinal Wi-Fi", "Observações"];
+            colunas = ["Setor", "Local", "Hospitalar/SIGA", "Arya", "Impressão", "Leitor Digital", "Acesso Remoto", "Sinal Wi-Fi", "Observações"];
             linhas = registros.map(registro => [
                 registro.setor,
                 registro.local,
@@ -500,7 +508,7 @@ gerarPDFBtn.addEventListener('click', () => {
                 registro.observacoes || "Nenhuma"
             ]);
         } else if (tipo === "racks") {
-            colunas = ["Setor", "Local", "Nobreak", "Limpeza", "Org. Cabos", "Material em Sala", "Forros", "Pintura", "Iluminação", "Ar Condicionado","Observações"];
+            colunas = ["Setor", "Local", "Nobreak", "Limpeza", "Org. Cabos", "Material em Sala", "Forros", "Pintura", "Iluminação", "Ar Condicionado", "Observações"];
             linhas = registros.map(registro => [
                 registro.setor,
                 registro.local,
@@ -549,9 +557,12 @@ gerarPDFBtn.addEventListener('click', () => {
     adicionarTabelaPorTipo("racks", registrosPorTipo.racks, "Checklist - Racks");
     adicionarTabelaPorTipo("emergencia", registrosPorTipo.emergencia, "Checklist - Emergência");
 
-    // Adicionar a assinatura
-    const imgData = assinaturaCanvas.toDataURL('image/png');
+    // Adicionar informações do responsável e assinatura
+    doc.setFontSize(12);
+    doc.text(`Responsável: ${nomeResponsavel} | Matrícula: ${matriculaResponsavel}`, 20, y);
+    y += 10;
     doc.text("Assinatura do Responsável:", 20, y);
+    const imgData = assinaturaCanvas.toDataURL('image/png');
     doc.addImage(imgData, 'PNG', 20, y + 2, 100, 40);
 
     doc.save('Relatorio_Checklist_Hospital.pdf');

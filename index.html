@@ -127,12 +127,21 @@
 
 <div id="painelFinal" class="mt-6 hidden">
   <h3 class="text-lg font-bold text-gray-700 mb-2">Finalização do Checklist</h3>
+  <div class="grid gap-4 mb-4">
+    <div>
+      <label class="block font-semibold mb-1" for="nomeResponsavel">Nome do Responsável:</label>
+      <input type="text" id="nomeResponsavel" required placeholder="Digite o nome do responsável" class="w-full border rounded-lg px-3 py-2"/>
+    </div>
+    <div>
+      <label class="block font-semibold mb-1" for="matriculaResponsavel">Matrícula do Responsável:</label>
+      <input type="text" id="matriculaResponsavel" required placeholder="Digite a matrícula" class="w-full border rounded-lg px-3 py-2"/>
+    </div>
+  </div>
   <p class="mb-2">Assinatura do Responsável:</p>
   <canvas id="assinatura" width="300" height="150" class="border border-gray-400 rounded-lg mb-2"></canvas>
   <button type="button" id="limparAssinatura" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl mr-2">Limpar Assinatura</button>
   <button type="button" id="gerarPDF" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Gerar PDF</button>
 </div>
-
 <ul id="listaSalasVisitadas" class="mt-6 border-t pt-4 text-sm text-gray-600 list-disc list-inside space-y-1"></ul>
 </form>
 </div>
