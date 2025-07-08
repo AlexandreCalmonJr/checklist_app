@@ -1,43 +1,4 @@
-<script type="text/javascript">
-  var gk_isXlsx = false;
-  var gk_xlsxFileLookup = {};
-  var gk_fileData = {};
-  function filledCell(cell) {
-    return cell !== '' && cell != null;
-  }
-  function loadFileData(filename) {
-  if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-      try {
-          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-          var firstSheetName = workbook.SheetNames[0];
-          var worksheet = workbook.Sheets[firstSheetName];
-
-          // Convert sheet to JSON to filter blank rows
-          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-          // Filter out blank rows (rows where all cells are empty, null, or undefined)
-          var filteredData = jsonData.filter(row => row.some(filledCell));
-
-          // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-          var headerRowIndex = filteredData.findIndex((row, index) =>
-            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-          );
-          // Fallback
-          if (headerRowIndex === -1 || headerRowIndex > 25) {
-            headerRowIndex = 0;
-          }
-
-          // Convert filtered JSON back to CSV
-          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-          return csv;
-      } catch (e) {
-          console.error(e);
-          return "";
-      }
-  }
-  return gk_fileData[filename] || "";
-  }
-  </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
@@ -103,6 +64,12 @@
         <option value="">Selecione o Local</option>
       </select>
     </div>
+    
+    <!-- Div para exibir o responsável pelo setor -->
+    <div id="responsavelDiv" class="mt-2 hidden p-2 bg-blue-50 border border-blue-200 rounded-lg">
+        <p class="text-sm text-gray-700">Responsável pelo item: <span id="responsavelNome" class="font-bold text-blue-700"></span></p>
+    </div>
+
   </div>
 </fieldset>
 
@@ -121,32 +88,29 @@
 <div class="flex flex-wrap gap-3 justify-center">
   <button type="button" id="salvarSalaBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Salvar Sala</button>
   <button type="button" id="proximaSalaBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl">Próxima Sala</button>
-  <button type="button" id="finalizarChecklistBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl">Finalizar Checklist</button>
+  <button type="button" id="finalizarChecklistBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl">Revisar e Assinar</button>
   <button type="button" id="resetarChecklist" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl">Resetar Checklist</button>
 </div>
 
-<div id="painelFinal" class="mt-6 hidden">
-  <h3 class="text-lg font-bold text-gray-700 mb-2">Finalização do Checklist</h3>
-  <div class="grid gap-4 mb-4">
-    <div>
-      <label class="block font-semibold mb-1" for="nomeResponsavel">Nome do Responsável:</label>
-      <input type="text" id="nomeResponsavel" required placeholder="Digite o nome do responsável" class="w-full border rounded-lg px-3 py-2"/>
-    </div>
-    <div>
-      <label class="block font-semibold mb-1" for="matriculaResponsavel">Matrícula do Responsável:</label>
-      <input type="text" id="matriculaResponsavel" required placeholder="Digite a matrícula" class="w-full border rounded-lg px-3 py-2"/>
-    </div>
-  </div>
-  <p class="mb-2">Assinatura do Responsável:</p>
-  <canvas id="assinatura" width="300" height="150" class="border border-gray-400 rounded-lg mb-2"></canvas>
-  <button type="button" id="limparAssinatura" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl mr-2">Limpar Assinatura</button>
-  <button type="button" id="gerarPDF" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Gerar PDF</button>
+<!-- Seção de Assinaturas Dinâmicas -->
+<div id="painelAssinaturas" class="mt-6 hidden space-y-8">
+  <h2 class="text-xl font-bold text-center text-gray-800">Assinaturas dos Responsáveis</h2>
+  <!-- Blocos de assinatura serão inseridos aqui pelo JavaScript -->
 </div>
+
+<!-- Botão para Gerar PDF Final -->
+<div id="painelGerarPDF" class="mt-8 hidden text-center">
+  <button type="button" id="gerarPDF" class="bg-blue-800 hover:bg-blue-900 text-white px-6 py-3 rounded-xl font-bold">
+    Gerar PDF Final com Todas as Assinaturas
+  </button>
+</div>
+
+
 <ul id="listaSalasVisitadas" class="mt-6 border-t pt-4 text-sm text-gray-600 list-disc list-inside space-y-1"></ul>
 </form>
 </div>
 
 <script src="script.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93b0c83e3c35add1',t:'MTc0NjQ1MzgxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
 </body>
 </html>
