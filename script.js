@@ -4,7 +4,8 @@ const RESPONSAVEIS = {
     IMAGEM: "Vida e Imagem",
     ENFERMAGEM: "Enfermagem",
     FARMACIA: "Farmacia",
-    TI: "TI"
+    TI: "TI",
+    ONCOLOGIA: "Oncologia"
 };
 
 // Função auxiliar para criar um item de local com seu responsável
@@ -12,6 +13,10 @@ const criarLocal = (local, responsavel) => ({ local, responsavel });
 
 // Dados de setores e locais organizados por tipo de checklist e com responsáveis
 const locaisPorTipoChecklist = {
+    totensepaineis:{
+        "TOTEM": ["TOTEM ADT 01", "TOTEM ADT 02", "TOTEM ADT 03", "TOTEM ADT 04", "TOTEM ADT EXAME","TOTEM EMG PED 01",].map(l => criarLocal(l, RESPONSAVEIS.ATENDIMENTO)),
+        "ONCOLOGIA": [criarLocal("TOTEM ONCOLOGIA 4º Andar", RESPONSAVEIS.ONCOLOGIA)]
+    },
     centroCirurgico: {
         "Centro Cirúrgico": [
             "SALA 01", "SALA 02", "SALA 03", "SALA 04", "SALA 05",
@@ -134,6 +139,21 @@ const itensConfig = {
         { label: "Telefonia funcionando?", name: "telefonia", options: ["Sim", "Não"] },
         { label: "Acesso Remoto funcionando?", name: "acesso_remoto", options: ["Sim", "Não"] },
         { label: "Wi-Fi funcionando?", name: "wifi", options: ["Sim", "Não"] }
+    ],
+    totensepaineis:[
+        { label: "Versão Java (7.80 + 8.231) instalada?", name: "versao_java", options: ["Sim", "Não"] },
+        { label: "Captura BIO V9 funcionando?", name: "captura_bio_v9", options: ["Sim", "Não"] },
+        { label: "Navegador (Firefox 52/Edge/IE) configurado?", name: "navegador_configurado", options: ["Sim", "Não"] },
+        { label: "Abertura em Tela Cheia funcionando?", name: "abertura_tela_cheia", options: ["Sim", "Não"] },
+        { label: "Automatos funcionando?", name: "automatos", options: ["Sim", "Não"] },
+        { label: "Leitor Biométrico funcionando?", name: "leitor_biometrico", options: ["Sim", "Não"] },
+        { label: "Touchscreen funcionando?", name: "touchscreen", options: ["Sim", "Não"] },
+        { label: "Estrutura do móvel está OK?", name: "estrutura_movel", options: ["Sim", "Não"] },
+        { label: "Conexão com a Internet funcionando?", name: "conexao_internet", options: ["Sim", "Não"] },
+        { label: "Impressora Laser funcionando?", name: "impressora_laser", options: ["Sim", "Não"] },
+        { label: "Impressora Térmica funcionando?", name: "impressora_termica", options: ["Sim", "Não"] },
+        { label: "Cabeamento Estruturado/Conexão via splitter OK?", name: "cabeamento", options: ["Sim", "Não"] },
+        { label: "Teclado de Senha funcionando?", name: "teclado_senha", options: ["Sim", "Não"] }
     ]
 };
 
