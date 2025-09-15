@@ -461,6 +461,9 @@ gerarPDFBtn.addEventListener('click', () => {
         } else if (tipo === "racks") {
             colunas = [...colunasBase, "Nobreak", "Limpeza", "Cabos", "Material", "Forros", "Pintura", "Ilum.", "Ar Cond.", ...observacoesColuna];
             linhas = registros.map(r => [r.setor, r.local, r.itens.nobreak, r.itens.limpeza, r.itens.org_cabos, r.itens.material_sala, r.itens.forros, r.itens.pintura, r.itens.iluminacao, r.itens.ar_condicionado, r.observacoes || ""]);
+        } else if (tipo === "totensepaineis") {
+            colunas = [...colunasBase, "Java", "BIO V9", "Navegador", "Tela Cheia", "Automatos", "Leitor Bio.", "Touch", "Móvel", "Internet", "Laser", "Térmica", "Cabos", "Teclado", ...observacoesColuna];
+            linhas = registros.map(r => [r.setor, r.local, r.itens.versao_java, r.itens.captura_bio_v9, r.itens.navegador_configurado, r.itens.abertura_tela_cheia, r.itens.automatos, r.itens.leitor_biometrico, r.itens.touchscreen, r.itens.estrutura_movel, r.itens.conexao_internet, r.itens.impressora_laser, r.itens.impressora_termica, r.itens.cabeamento, r.itens.teclado_senha, r.observacoes || ""]);
         } else { // emergencia
             colunas = [...colunasBase, "Nav.", "SAMWEB", "Arya", "Impr.", "NDD", "Leitor", "Tel.", "Remoto", "Wi-Fi", ...observacoesColuna];
             linhas = registros.map(r => [r.setor, r.local, r.itens.navegador_atualizado, r.itens.samweb, r.itens.arya, r.itens.impressao, r.itens.ndd, r.itens.leitor_digital, r.itens.telefonia, r.itens.acesso_remoto, r.itens.wifi, r.observacoes || ""]);
