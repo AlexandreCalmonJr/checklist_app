@@ -434,7 +434,10 @@ gerarPDFBtn.addEventListener('click', () => {
     doc.text("Relatório de Checklist - Hospital Teresa de Lisieux", 14, y);
     y += 8;
     doc.setFontSize(12);
-    doc.text(`Data: ${document.getElementById('dataCheck').valueAsDate.toLocaleDateString()} | Técnico: ${nomeTecnicoSelect.value} | Chamado: ${document.getElementById('numeroChamado').value}`, 14, y);
+    const dataValue = document.getElementById('dataCheck').value; // Pega a data como string "yyyy-mm-dd"
+    const [ano, mes, dia] = dataValue.split('-');
+    const dataFormatada = `${dia}/${mes}/${ano}`; // Formata para "dd/mm/yyyy"
+    doc.text(`Data: ${dataFormatada} | Técnico: ${nomeTecnicoSelect.value} | Chamado: ${document.getElementById('numeroChamado').value}`, 14, y);
     y += 10;
 
     const registrosPorResponsavel = registrosChecklist.reduce((acc, r) => {
