@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  checklist-app:
+    image: nginx:alpine
+    container_name: checklist-app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Código da aplicação
+      - .:/usr/share/nginx/html:ro
+      # Configuração nginx
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # SSL (opcional)
+      # - ./ssl/cert.crt:/etc/nginx/ssl/cert.crt:ro
+      # - ./ssl/key.key:/etc/nginx/ssl/key.key:ro
+    restart: unless-stopped
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - checklist-network
+    labels:
+      - "com.example.description=Checklist Hospitalar PWA"
+
+networks:
+  checklist-network:
+    driver: bridge
+
+# Como usar:
+# 1. Instalar Docker e Docker Compose
+# 2. Na pasta do projeto: docker-compose up -d
+# 3. Acessar em http://localhost
+# 4. Para parar: docker-compose down
+# 5. Para logs: docker-compose logs -f checklist-app
