@@ -430,9 +430,9 @@ gerarPDFBtn.addEventListener('click', () => {
         return;
     }
 
-    doc.setFontSize(16);
-    doc.text("Relatório de Checklist - Hospital Teresa de Lisieux", 14, y);
-    y += 8;
+    doc.setFontSize(12);
+    doc.setTextColor(34);
+    doc.text(`Setor Responsável: ${responsavel}`, 14, y);
     doc.setFontSize(12);
     const dataValue = document.getElementById('dataCheck').value; // Pega a data como string "yyyy-mm-dd"
     const [ano, mes, dia] = dataValue.split('-');

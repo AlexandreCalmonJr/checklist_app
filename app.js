@@ -599,9 +599,9 @@ class ChecklistApp {
     }
 
     /**
-     * Gera o PDF final
+     * Gera o PDF final (estilizado, com logo, cabeçalho e rodapé)
      */
-    gerarPDF() {
+    async gerarPDF() {
         // Validar assinaturas
         const assinaturas = {};
         let todasAssinaturasOk = true;
@@ -636,46 +636,155 @@ class ChecklistApp {
         try {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: "landscape" });
-            let y = 15;
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            let y = 18;
 
-            // Cabeçalho - Obter nome da unidade selecionada
+            // Obter nome da unidade selecionada
             const unidadeSelecionada = this.elements.unidade.value;
             const unidade = UNIDADES.find(u => u.id === unidadeSelecionada);
             const nomeUnidade = unidade ? unidade.nome : "Hospital Teresa de Lisieux";
 
-            doc.setFontSize(16);
-            doc.text(`Relatório de Checklist - ${nomeUnidade}`, 14, y);
-            y += 8;
+            // Carregar logo (se existir) como dataURL
+            const logoImgEl = document.querySelector('img[alt="Logo do Hospital"]');
+            const loadImageAsDataUrl = (img) => new Promise((resolve) => {
+                if (!img) return resolve(null);
+                if (img.complete && img.naturalWidth !== 0) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                } else {
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/png'));
+                    };
+                    img.onerror = () => resolve(null);
+                }
+            });
 
-            // Informações gerais
-            doc.setFontSize(12);
+            const logoDataUrl = await loadImageAsDataUrl(logoImgEl);
+
+            // Header estilizado com azul sólido e logo com cantos levemente arredondados
+            // ajustado para comportar metadados no próprio cabeçalho
+            const headerHeight = 28;
+            try {
+                const canvasW = Math.round(pageWidth * 4);
+                const canvasH = Math.round(headerHeight * 4);
+                const headerCanvas = document.createElement('canvas');
+                headerCanvas.width = canvasW;
+                headerCanvas.height = canvasH;
+                const hctx = headerCanvas.getContext('2d');
+
+                // Fundo azul sólido (sem gradiente)
+                hctx.fillStyle = '#3b82f6';
+                hctx.fillRect(0, 0, canvasW, canvasH);
+
+                // Draw logo com cantos levemente arredondados (não circular)
+                if (logoImgEl && logoDataUrl) {
+                    const logoPadding = 8 * 4;
+                    const logoX = logoPadding;
+
+                    // Desenhar imagem da logo em tamanho original (sem redimensionamento)
+                    const img = new Image();
+                    img.src = logoDataUrl;
+                    await new Promise((res) => { img.onload = res; img.onerror = res; });
+                    const iw = img.naturalWidth || img.width;
+                    const ih = img.naturalHeight || img.height;
+                    if (iw && ih) {
+                        // Escala logo para caber no header mantendo aspect ratio
+                        const maxH = (canvasH - 2 * 4);
+                        const scale = maxH / ih;
+                        const dw = Math.round(iw * scale);
+                        const dh = Math.round(ih * scale);
+                        const logoY = Math.round((canvasH - dh) / 2);
+                        hctx.drawImage(img, logoX, logoY, dw, dh);
+                    }
+                }
+
+                // Export header canvas and add as image
+                const headerDataUrl = headerCanvas.toDataURL('image/png');
+                doc.addImage(headerDataUrl, 'PNG', 0, 0, pageWidth, headerHeight);
+            } catch (e) {
+                doc.setFillColor(59, 130, 246);
+                doc.rect(0, 0, pageWidth, headerHeight, 'F');
+            }
+
+            // Título central (sobre fundo azul - branco)
+            doc.setFontSize(13);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont(undefined, 'bold');
+            const tipoChecklistSelect = this.elements.tipoChecklistSelect.value;
+            const tipoLabel = {
+                centroCirurgico: "Centro Cirúrgico",
+                racks: "Racks",
+                emergencia: "Emergência",
+                totensepaineis: "Totens e Paineis"
+            }[tipoChecklistSelect] || "Desconhecido";
+            const titulo = `Checklist de Ativos TI - ${tipoLabel}`;
+            doc.text(titulo, pageWidth / 2, 9, { align: 'center' });
+
+            // Metadados no próprio header, alinhados à direita (texto branco)
             const dataValue = this.elements.dataCheck.value;
             const [ano, mes, dia] = dataValue.split('-');
             const dataFormatada = `${dia}/${mes}/${ano}`;
-            doc.text(`Data: ${dataFormatada} | Técnico: ${this.elements.nomeTecnicoSelect.value} | Chamado: ${this.elements.numeroChamado.value}`, 14, y);
-            y += 10;
+            const chamado = this.elements.numeroChamado.value || '';
+            const tecnico = this.elements.nomeTecnicoSelect.value || '';
+            const rightX = pageWidth - 14;
+
+            doc.setFontSize(8);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont(undefined, 'normal');
+            const infoLinha = `Unidade: ${nomeUnidade}    Data: ${dataFormatada}    Chamado: ${chamado}    Técnico: ${tecnico}`;
+            doc.text(infoLinha, rightX, 20, { align: 'right' });
+
+            // ajustar y para o conteúdo começar logo abaixo do header
+            y = headerHeight + 6;
 
             // Agrupar registros por responsável
             const registrosPorResponsavel = this.dataManager.registrosChecklist.reduce((acc, r) => {
+
                 (acc[r.responsavel] = acc[r.responsavel] || []).push(r);
                 return acc;
             }, {});
 
-            // Gerar tabelas por responsável
-            Object.keys(registrosPorResponsavel).forEach(responsavel => {
-                if (y > 160) {
+            // Função para adicionar rodapé em cada página
+            const addFooters = (data) => {
+                const pageCount = doc.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    const pageStr = `Página ${i} de ${pageCount}`;
+                    doc.setFontSize(9);
+                    doc.setTextColor(130);
+                    doc.text(pageStr, pageWidth - 14, pageHeight - 8, { align: 'right' });
+                    const ts = new Date().toLocaleString();
+                    doc.text(`Gerado em: ${ts}`, 14, pageHeight - 8);
+                }
+            };
+
+            // Gerar tabelas por responsável usando autoTable
+            const responsaveis = Object.keys(registrosPorResponsavel);
+            for (let idx = 0; idx < responsaveis.length; idx++) {
+                const responsavel = responsaveis[idx];
+                // Se não couber na página, criar nova
+                if (y > pageHeight - 60) {
                     doc.addPage();
-                    y = 15;
+                    y = 18;
                 }
 
-                doc.setFontSize(14);
-                doc.text(`Itens sob responsabilidade de: ${responsavel}`, 14, y);
-                y += 8;
+                doc.setFontSize(12);
+                doc.setTextColor(34);
+                doc.text(`Setor Responsável: ${responsavel}`, 14, y);
+                y += 6;
 
                 const registros = registrosPorResponsavel[responsavel];
                 const tipo = registros[0].tipoChecklist;
-
-                // Obter configuração de colunas do constants.js
                 const config = this.getPDFColumnsConfig(tipo);
                 const colunas = config.columns;
                 const linhas = registros.map(r => this.buildPDFRow(r, config.fields));
@@ -684,19 +793,47 @@ class ChecklistApp {
                     startY: y,
                     head: [colunas],
                     body: linhas,
-                    styles: { fontSize: 8, cellPadding: 1.5 },
-                    headStyles: { fillColor: [22, 78, 99], textColor: 255, fontSize: 8 },
-                    alternateRowStyles: { fillColor: [241, 245, 249] }
+                    theme: 'grid',
+                    styles: { fontSize: 9, cellPadding: 2 },
+                    headStyles: { fillColor: [59, 130, 246], textColor: 255, halign: 'center' },
+                    alternateRowStyles: { fillColor: [245, 248, 255] },
+                    columnStyles: {
+                        0: { cellWidth: 40 }
+                    },
+                    margin: { left: 14, right: 14 },
+                    didDrawPage: (data) => {
+                        // atualizar y para após a tabela
+                    }
                 });
-                y = doc.lastAutoTable.finalY;
 
-                // Adicionar assinatura
+                y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 6 : y + 40;
+
+                // Assinatura formatada
                 const dadosAssinatura = assinaturas[responsavel];
-                doc.setFontSize(10);
-                doc.text(`Assinado por: ${dadosAssinatura.nome} (Matrícula: ${dadosAssinatura.matricula})`, 14, y + 8);
-                doc.addImage(dadosAssinatura.imgData, 'PNG', 14, y + 10, 60, 25);
-                y += 40;
-            });
+                if (dadosAssinatura) {
+                    const assinaturaBoxW = 180;
+                    const assinaturaBoxH = 36;
+                    if (y + assinaturaBoxH > pageHeight - 30) {
+                        doc.addPage();
+                        y = 18;
+                    }
+
+                    // Caixa de assinatura
+                    doc.setDrawColor(220);
+                    doc.rect(14, y, assinaturaBoxW, assinaturaBoxH);
+                    doc.setFontSize(10);
+                    doc.text(`Assinado por: ${dadosAssinatura.nome} (Matrícula: ${dadosAssinatura.matricula})`, 18, y + 10);
+                    try {
+                        doc.addImage(dadosAssinatura.imgData, 'PNG', 14 + assinaturaBoxW - 70, y + 4, 60, 28);
+                    } catch (e) {
+                        // ignora erros de imagem
+                    }
+                    y += assinaturaBoxH + 8;
+                }
+            }
+
+            // Adicionar rodapé (número de páginas e timestamp)
+            addFooters();
 
             // Salvar PDF (trigger download)
             const fileName = `Relatorio_Checklist_${new Date().toISOString().slice(0, 10)}.pdf`;
