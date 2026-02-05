@@ -1,110 +1,78 @@
-import { supabaseAdmin, verifyAuth, jsonResponse, errorResponse } from '../lib/supabase.js';
+const { getSupabaseAdmin, verifyAuth, setCorsHeaders } = require('../lib/supabase.js');
 
-export const config = {
-    runtime: 'edge'
-};
+module.exports = async function handler(req, res) {
+    setCorsHeaders(res);
 
-export default async function handler(req) {
-    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        return new Response(null, { status: 204 });
+        return res.status(204).end();
     }
 
-    // Verify authentication for all operations
     const { user, error: authError } = await verifyAuth(req);
     if (authError) {
-        return errorResponse(authError, 401);
+        return res.status(401).json({ error: authError });
     }
 
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
+    const id = req.query.id;
+    const supabaseAdmin = getSupabaseAdmin();
 
     try {
         switch (req.method) {
             case 'GET':
-                return await getTecnicos(id);
+                if (id) {
+                    const { data, error } = await supabaseAdmin
+                        .from('tecnicos')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+                    if (error) return res.status(404).json({ error: 'Técnico não encontrado' });
+                    return res.status(200).json(data);
+                }
+                const { data, error } = await supabaseAdmin
+                    .from('tecnicos')
+                    .select('*')
+                    .order('nome');
+                if (error) return res.status(400).json({ error: error.message });
+                return res.status(200).json(data);
+
             case 'POST':
-                return await createTecnico(await req.json());
+                const { nome, ativo = true } = req.body || {};
+                if (!nome) return res.status(400).json({ error: 'Nome é obrigatório' });
+                const { data: created, error: createErr } = await supabaseAdmin
+                    .from('tecnicos')
+                    .insert({ nome, ativo })
+                    .select()
+                    .single();
+                if (createErr) return res.status(400).json({ error: createErr.message });
+                return res.status(201).json(created);
+
             case 'PUT':
-                return await updateTecnico(id, await req.json());
+                if (!id) return res.status(400).json({ error: 'ID é obrigatório' });
+                const updates = {};
+                if (req.body?.nome) updates.nome = req.body.nome;
+                if (req.body?.ativo !== undefined) updates.ativo = req.body.ativo;
+                const { data: updated, error: updateErr } = await supabaseAdmin
+                    .from('tecnicos')
+                    .update(updates)
+                    .eq('id', id)
+                    .select()
+                    .single();
+                if (updateErr) return res.status(400).json({ error: updateErr.message });
+                return res.status(200).json(updated);
+
             case 'DELETE':
-                return await deleteTecnico(id);
+                if (!id) return res.status(400).json({ error: 'ID é obrigatório' });
+                const { error: deleteErr } = await supabaseAdmin
+                    .from('tecnicos')
+                    .delete()
+                    .eq('id', id);
+                if (deleteErr) return res.status(400).json({ error: deleteErr.message });
+                return res.status(200).json({ success: true, message: 'Técnico removido' });
+
             default:
-                return errorResponse('Método não permitido', 405);
+                return res.status(405).json({ error: 'Método não permitido' });
         }
     } catch (err) {
         console.error('Tecnicos API error:', err);
-        return errorResponse('Erro interno do servidor', 500);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
     }
-}
-
-async function getTecnicos(id) {
-    if (id) {
-        const { data, error } = await supabaseAdmin
-            .from('tecnicos')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (error) return errorResponse('Técnico não encontrado', 404);
-        return jsonResponse(data);
-    }
-
-    const { data, error } = await supabaseAdmin
-        .from('tecnicos')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data);
-}
-
-async function createTecnico(body) {
-    const { nome } = body;
-
-    if (!nome) {
-        return errorResponse('Nome é obrigatório');
-    }
-
-    const { data, error } = await supabaseAdmin
-        .from('tecnicos')
-        .insert({ nome, ativo: true })
-        .select()
-        .single();
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data, 201);
-}
-
-async function updateTecnico(id, body) {
-    if (!id) return errorResponse('ID é obrigatório');
-
-    const { nome, ativo } = body;
-    const updates = {};
-    if (nome !== undefined) updates.nome = nome;
-    if (ativo !== undefined) updates.ativo = ativo;
-
-    const { data, error } = await supabaseAdmin
-        .from('tecnicos')
-        .update(updates)
-        .eq('id', parseInt(id))
-        .select()
-        .single();
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data);
-}
-
-async function deleteTecnico(id) {
-    if (!id) return errorResponse('ID é obrigatório');
-
-    // Soft delete - apenas marca como inativo
-    const { error } = await supabaseAdmin
-        .from('tecnicos')
-        .update({ ativo: false })
-        .eq('id', parseInt(id));
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse({ success: true, message: 'Técnico desativado' });
-}
+};

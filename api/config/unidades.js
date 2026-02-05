@@ -1,44 +1,42 @@
-import { supabaseAdmin, verifyAuth, jsonResponse, errorResponse } from '../lib/supabase.js';
+const { getSupabaseAdmin, verifyAuth, setCorsHeaders } = require('../lib/supabase.js');
 
-export const config = {
-    runtime: 'edge'
-};
+module.exports = async function handler(req, res) {
+    setCorsHeaders(res);
 
-export default async function handler(req) {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        return new Response(null, { status: 204 });
+        return res.status(204).end();
     }
 
     // Verify authentication for all operations
     const { user, error: authError } = await verifyAuth(req);
     if (authError) {
-        return errorResponse(authError, 401);
+        return res.status(401).json({ error: authError });
     }
 
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
+    const id = req.query.id;
+    const supabaseAdmin = getSupabaseAdmin();
 
     try {
         switch (req.method) {
             case 'GET':
-                return await getUnidades(id);
+                return await getUnidades(res, supabaseAdmin, id);
             case 'POST':
-                return await createUnidade(await req.json());
+                return await createUnidade(res, supabaseAdmin, req.body);
             case 'PUT':
-                return await updateUnidade(id, await req.json());
+                return await updateUnidade(res, supabaseAdmin, id, req.body);
             case 'DELETE':
-                return await deleteUnidade(id);
+                return await deleteUnidade(res, supabaseAdmin, id);
             default:
-                return errorResponse('Método não permitido', 405);
+                return res.status(405).json({ error: 'Método não permitido' });
         }
     } catch (err) {
         console.error('Unidades API error:', err);
-        return errorResponse('Erro interno do servidor', 500);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
     }
-}
+};
 
-async function getUnidades(id) {
+async function getUnidades(res, supabaseAdmin, id) {
     if (id) {
         const { data, error } = await supabaseAdmin
             .from('unidades')
@@ -46,8 +44,8 @@ async function getUnidades(id) {
             .eq('id', id)
             .single();
 
-        if (error) return errorResponse('Unidade não encontrada', 404);
-        return jsonResponse(data);
+        if (error) return res.status(404).json({ error: 'Unidade não encontrada' });
+        return res.status(200).json(data);
     }
 
     const { data, error } = await supabaseAdmin
@@ -55,15 +53,15 @@ async function getUnidades(id) {
         .select('*')
         .order('nome');
 
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data);
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(200).json(data);
 }
 
-async function createUnidade(body) {
-    const { id, nome, sigla } = body;
+async function createUnidade(res, supabaseAdmin, body) {
+    const { id, nome, sigla } = body || {};
 
     if (!id || !nome || !sigla) {
-        return errorResponse('ID, nome e sigla são obrigatórios');
+        return res.status(400).json({ error: 'ID, nome e sigla são obrigatórios' });
     }
 
     const { data, error } = await supabaseAdmin
@@ -72,14 +70,14 @@ async function createUnidade(body) {
         .select()
         .single();
 
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data, 201);
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(201).json(data);
 }
 
-async function updateUnidade(id, body) {
-    if (!id) return errorResponse('ID é obrigatório');
+async function updateUnidade(res, supabaseAdmin, id, body) {
+    if (!id) return res.status(400).json({ error: 'ID é obrigatório' });
 
-    const { nome, sigla } = body;
+    const { nome, sigla } = body || {};
     const updates = {};
     if (nome) updates.nome = nome;
     if (sigla) updates.sigla = sigla;
@@ -91,18 +89,18 @@ async function updateUnidade(id, body) {
         .select()
         .single();
 
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data);
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(200).json(data);
 }
 
-async function deleteUnidade(id) {
-    if (!id) return errorResponse('ID é obrigatório');
+async function deleteUnidade(res, supabaseAdmin, id) {
+    if (!id) return res.status(400).json({ error: 'ID é obrigatório' });
 
     const { error } = await supabaseAdmin
         .from('unidades')
         .delete()
         .eq('id', id);
 
-    if (error) return errorResponse(error.message);
-    return jsonResponse({ success: true, message: 'Unidade removida' });
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(200).json({ success: true, message: 'Unidade removida' });
 }

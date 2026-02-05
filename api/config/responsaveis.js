@@ -1,105 +1,77 @@
-import { supabaseAdmin, verifyAuth, jsonResponse, errorResponse } from '../lib/supabase.js';
+const { getSupabaseAdmin, verifyAuth, setCorsHeaders } = require('../lib/supabase.js');
 
-export const config = {
-    runtime: 'edge'
-};
+module.exports = async function handler(req, res) {
+    setCorsHeaders(res);
 
-export default async function handler(req) {
-    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        return new Response(null, { status: 204 });
+        return res.status(204).end();
     }
 
-    // Verify authentication for all operations
     const { user, error: authError } = await verifyAuth(req);
     if (authError) {
-        return errorResponse(authError, 401);
+        return res.status(401).json({ error: authError });
     }
 
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
+    const id = req.query.id;
+    const supabaseAdmin = getSupabaseAdmin();
 
     try {
         switch (req.method) {
             case 'GET':
-                return await getResponsaveis(id);
+                if (id) {
+                    const { data, error } = await supabaseAdmin
+                        .from('responsaveis')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+                    if (error) return res.status(404).json({ error: 'Responsável não encontrado' });
+                    return res.status(200).json(data);
+                }
+                const { data, error } = await supabaseAdmin
+                    .from('responsaveis')
+                    .select('*')
+                    .order('nome');
+                if (error) return res.status(400).json({ error: error.message });
+                return res.status(200).json(data);
+
             case 'POST':
-                return await createResponsavel(await req.json());
+                const { id: newId, nome } = req.body || {};
+                if (!newId || !nome) return res.status(400).json({ error: 'ID e nome são obrigatórios' });
+                const { data: created, error: createErr } = await supabaseAdmin
+                    .from('responsaveis')
+                    .insert({ id: newId, nome })
+                    .select()
+                    .single();
+                if (createErr) return res.status(400).json({ error: createErr.message });
+                return res.status(201).json(created);
+
             case 'PUT':
-                return await updateResponsavel(id, await req.json());
+                if (!id) return res.status(400).json({ error: 'ID é obrigatório' });
+                const { nome: updatedNome } = req.body || {};
+                if (!updatedNome) return res.status(400).json({ error: 'Nome é obrigatório' });
+                const { data: updated, error: updateErr } = await supabaseAdmin
+                    .from('responsaveis')
+                    .update({ nome: updatedNome })
+                    .eq('id', id)
+                    .select()
+                    .single();
+                if (updateErr) return res.status(400).json({ error: updateErr.message });
+                return res.status(200).json(updated);
+
             case 'DELETE':
-                return await deleteResponsavel(id);
+                if (!id) return res.status(400).json({ error: 'ID é obrigatório' });
+                const { error: deleteErr } = await supabaseAdmin
+                    .from('responsaveis')
+                    .delete()
+                    .eq('id', id);
+                if (deleteErr) return res.status(400).json({ error: deleteErr.message });
+                return res.status(200).json({ success: true, message: 'Responsável removido' });
+
             default:
-                return errorResponse('Método não permitido', 405);
+                return res.status(405).json({ error: 'Método não permitido' });
         }
     } catch (err) {
         console.error('Responsaveis API error:', err);
-        return errorResponse('Erro interno do servidor', 500);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
     }
-}
-
-async function getResponsaveis(id) {
-    if (id) {
-        const { data, error } = await supabaseAdmin
-            .from('responsaveis')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (error) return errorResponse('Responsável não encontrado', 404);
-        return jsonResponse(data);
-    }
-
-    const { data, error } = await supabaseAdmin
-        .from('responsaveis')
-        .select('*')
-        .order('nome');
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data);
-}
-
-async function createResponsavel(body) {
-    const { id, nome } = body;
-
-    if (!id || !nome) {
-        return errorResponse('ID e nome são obrigatórios');
-    }
-
-    const { data, error } = await supabaseAdmin
-        .from('responsaveis')
-        .insert({ id, nome })
-        .select()
-        .single();
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data, 201);
-}
-
-async function updateResponsavel(id, body) {
-    if (!id) return errorResponse('ID é obrigatório');
-
-    const { nome } = body;
-
-    const { data, error } = await supabaseAdmin
-        .from('responsaveis')
-        .update({ nome })
-        .eq('id', id)
-        .select()
-        .single();
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data);
-}
-
-async function deleteResponsavel(id) {
-    if (!id) return errorResponse('ID é obrigatório');
-
-    const { error } = await supabaseAdmin
-        .from('responsaveis')
-        .delete()
-        .eq('id', id);
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse({ success: true, message: 'Responsável removido' });
-}
+};

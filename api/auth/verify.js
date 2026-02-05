@@ -1,30 +1,22 @@
-import { verifyAuth, jsonResponse, errorResponse } from '../lib/supabase.js';
+const { verifyAuth, setCorsHeaders } = require('../lib/supabase.js');
 
-export const config = {
-    runtime: 'edge'
-};
+module.exports = async function handler(req, res) {
+    setCorsHeaders(res);
 
-export default async function handler(req) {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        return new Response(null, { status: 204 });
+        return res.status(204).end();
     }
 
     if (req.method !== 'GET') {
-        return errorResponse('Método não permitido', 405);
+        return res.status(405).json({ error: 'Método não permitido' });
     }
 
     const { user, error } = await verifyAuth(req);
 
     if (error) {
-        return errorResponse(error, 401);
+        return res.status(401).json({ error, valid: false });
     }
 
-    return jsonResponse({
-        valid: true,
-        user: {
-            id: user.id,
-            email: user.email
-        }
-    });
-}
+    return res.status(200).json({ valid: true, user });
+};

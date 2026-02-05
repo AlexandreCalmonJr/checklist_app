@@ -1,37 +1,48 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
-// Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Initialize Supabase client (lazy initialization)
+let supabase = null;
+let supabaseAdmin = null;
 
-// Client for public operations
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function getSupabase() {
+    if (!supabase) {
+        supabase = createClient(
+            process.env.SUPABASE_URL,
+            process.env.SUPABASE_ANON_KEY
+        );
+    }
+    return supabase;
+}
 
-// Admin client for server-side operations
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+function getSupabaseAdmin() {
+    if (!supabaseAdmin) {
+        supabaseAdmin = createClient(
+            process.env.SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+    }
+    return supabaseAdmin;
+}
 
 /**
  * Verifies the Authorization header and returns user data
- * @param {Request} req - The incoming request
- * @returns {Promise<{user: object|null, error: string|null}>}
  */
-export async function verifyAuth(req) {
-    const authHeader = req.headers.authorization || req.headers.get?.('authorization');
-    
+async function verifyAuth(req) {
+    const authHeader = req.headers.authorization || req.headers['authorization'];
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return { user: null, error: 'Token não fornecido' };
     }
-    
+
     const token = authHeader.replace('Bearer ', '');
-    
+
     try {
-        const { data: { user }, error } = await supabase.auth.getUser(token);
-        
+        const { data: { user }, error } = await getSupabase().auth.getUser(token);
+
         if (error || !user) {
             return { user: null, error: 'Token inválido ou expirado' };
         }
-        
+
         return { user, error: null };
     } catch (err) {
         return { user: null, error: 'Erro ao verificar autenticação' };
@@ -39,18 +50,17 @@ export async function verifyAuth(req) {
 }
 
 /**
- * Standard JSON response helper
+ * Set CORS headers
  */
-export function jsonResponse(data, status = 200) {
-    return new Response(JSON.stringify(data), {
-        status,
-        headers: { 'Content-Type': 'application/json' }
-    });
+function setCorsHeaders(res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
-/**
- * Error response helper
- */
-export function errorResponse(message, status = 400) {
-    return jsonResponse({ error: message }, status);
-}
+module.exports = {
+    getSupabase,
+    getSupabaseAdmin,
+    verifyAuth,
+    setCorsHeaders
+};

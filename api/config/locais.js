@@ -1,136 +1,86 @@
-import { supabaseAdmin, verifyAuth, jsonResponse, errorResponse } from '../lib/supabase.js';
+const { getSupabaseAdmin, verifyAuth, setCorsHeaders } = require('../lib/supabase.js');
 
-export const config = {
-    runtime: 'edge'
-};
+module.exports = async function handler(req, res) {
+    setCorsHeaders(res);
 
-export default async function handler(req) {
-    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        return new Response(null, { status: 204 });
+        return res.status(204).end();
     }
 
-    // Verify authentication for all operations
     const { user, error: authError } = await verifyAuth(req);
     if (authError) {
-        return errorResponse(authError, 401);
+        return res.status(401).json({ error: authError });
     }
 
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
-    const tipoChecklist = url.searchParams.get('tipo');
+    const id = req.query.id;
+    const tipo = req.query.tipo;
+    const supabaseAdmin = getSupabaseAdmin();
 
     try {
         switch (req.method) {
             case 'GET':
-                return await getLocais(id, tipoChecklist);
+                if (id) {
+                    const { data, error } = await supabaseAdmin
+                        .from('locais')
+                        .select('*, responsaveis(nome)')
+                        .eq('id', id)
+                        .single();
+                    if (error) return res.status(404).json({ error: 'Local não encontrado' });
+                    return res.status(200).json(data);
+                }
+                let query = supabaseAdmin
+                    .from('locais')
+                    .select('*, responsaveis(nome)')
+                    .order('setor')
+                    .order('local');
+                if (tipo) query = query.eq('tipo_checklist_id', tipo);
+                const { data, error } = await query;
+                if (error) return res.status(400).json({ error: error.message });
+                return res.status(200).json(data);
+
             case 'POST':
-                return await createLocal(await req.json());
+                const { tipo_checklist_id, setor, local, responsavel_id } = req.body || {};
+                if (!tipo_checklist_id || !setor || !local) {
+                    return res.status(400).json({ error: 'Tipo, setor e local são obrigatórios' });
+                }
+                const { data: created, error: createErr } = await supabaseAdmin
+                    .from('locais')
+                    .insert({ tipo_checklist_id, setor, local, responsavel_id })
+                    .select('*, responsaveis(nome)')
+                    .single();
+                if (createErr) return res.status(400).json({ error: createErr.message });
+                return res.status(201).json(created);
+
             case 'PUT':
-                return await updateLocal(id, await req.json());
+                if (!id) return res.status(400).json({ error: 'ID é obrigatório' });
+                const updates = {};
+                if (req.body?.setor) updates.setor = req.body.setor;
+                if (req.body?.local) updates.local = req.body.local;
+                if (req.body?.responsavel_id !== undefined) updates.responsavel_id = req.body.responsavel_id;
+                if (req.body?.tipo_checklist_id) updates.tipo_checklist_id = req.body.tipo_checklist_id;
+                const { data: updated, error: updateErr } = await supabaseAdmin
+                    .from('locais')
+                    .update(updates)
+                    .eq('id', id)
+                    .select('*, responsaveis(nome)')
+                    .single();
+                if (updateErr) return res.status(400).json({ error: updateErr.message });
+                return res.status(200).json(updated);
+
             case 'DELETE':
-                return await deleteLocal(id);
+                if (!id) return res.status(400).json({ error: 'ID é obrigatório' });
+                const { error: deleteErr } = await supabaseAdmin
+                    .from('locais')
+                    .delete()
+                    .eq('id', id);
+                if (deleteErr) return res.status(400).json({ error: deleteErr.message });
+                return res.status(200).json({ success: true, message: 'Local removido' });
+
             default:
-                return errorResponse('Método não permitido', 405);
+                return res.status(405).json({ error: 'Método não permitido' });
         }
     } catch (err) {
         console.error('Locais API error:', err);
-        return errorResponse('Erro interno do servidor', 500);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
     }
-}
-
-async function getLocais(id, tipoChecklist) {
-    if (id) {
-        const { data, error } = await supabaseAdmin
-            .from('locais')
-            .select(`
-                *,
-                responsaveis (id, nome)
-            `)
-            .eq('id', parseInt(id))
-            .single();
-
-        if (error) return errorResponse('Local não encontrado', 404);
-        return jsonResponse(data);
-    }
-
-    let query = supabaseAdmin
-        .from('locais')
-        .select(`
-            *,
-            responsaveis (id, nome)
-        `)
-        .order('setor')
-        .order('local');
-
-    if (tipoChecklist) {
-        query = query.eq('tipo_checklist_id', tipoChecklist);
-    }
-
-    const { data, error } = await query;
-
-    if (error) return errorResponse(error.message);
-
-    // Group by setor for easier frontend consumption
-    const grouped = data.reduce((acc, item) => {
-        if (!acc[item.setor]) {
-            acc[item.setor] = [];
-        }
-        acc[item.setor].push({
-            local: item.local,
-            responsavel: item.responsaveis?.nome || item.responsavel_id
-        });
-        return acc;
-    }, {});
-
-    return jsonResponse({ raw: data, grouped });
-}
-
-async function createLocal(body) {
-    const { tipo_checklist_id, setor, local, responsavel_id } = body;
-
-    if (!tipo_checklist_id || !setor || !local) {
-        return errorResponse('Tipo, setor e local são obrigatórios');
-    }
-
-    const { data, error } = await supabaseAdmin
-        .from('locais')
-        .insert({ tipo_checklist_id, setor, local, responsavel_id })
-        .select()
-        .single();
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data, 201);
-}
-
-async function updateLocal(id, body) {
-    if (!id) return errorResponse('ID é obrigatório');
-
-    const { setor, local, responsavel_id } = body;
-    const updates = {};
-    if (setor !== undefined) updates.setor = setor;
-    if (local !== undefined) updates.local = local;
-    if (responsavel_id !== undefined) updates.responsavel_id = responsavel_id;
-
-    const { data, error } = await supabaseAdmin
-        .from('locais')
-        .update(updates)
-        .eq('id', parseInt(id))
-        .select()
-        .single();
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse(data);
-}
-
-async function deleteLocal(id) {
-    if (!id) return errorResponse('ID é obrigatório');
-
-    const { error } = await supabaseAdmin
-        .from('locais')
-        .delete()
-        .eq('id', parseInt(id));
-
-    if (error) return errorResponse(error.message);
-    return jsonResponse({ success: true, message: 'Local removido' });
-}
+};
