@@ -36,7 +36,9 @@ class ChecklistApp {
     /**
      * Inicializa a aplicação
      */
-    init() {
+    async init() {
+        this.locaisDaUnidade = null; // Cache de locais por unidade
+
         this.cacheElements();
         this.setupEventListeners();
         this.initializeForm();
@@ -52,6 +54,9 @@ class ChecklistApp {
                 headerElement.textContent = unidade.nome;
             }
         }
+
+        // Carregar locais da unidade selecionada
+        await this.carregarLocaisDaUnidade(unidadeSalva);
 
         notify.success('Aplicação carregada com sucesso!', 2000);
     }
@@ -154,7 +159,7 @@ class ChecklistApp {
     /**
      * Handler para mudança de unidade
      */
-    onUnidadeChange(unidadeId) {
+    async onUnidadeChange(unidadeId) {
         StorageManager.save(STORAGE_KEYS.UNIDADE_SELECIONADA, unidadeId);
         const unidade = UNIDADES.find(u => u.id === unidadeId);
         if (unidade) {
@@ -163,8 +168,64 @@ class ChecklistApp {
             if (headerElement) {
                 headerElement.textContent = unidade.nome;
             }
-            notify.info(`✅ Unidade "${unidade.nome}" selecionada`);
+            notify.info(`✅ Unidade "${unidade.nome}" selecionada. Carregando locais...`);
         }
+
+        // Buscar locais da API para esta unidade
+        await this.carregarLocaisDaUnidade(unidadeId);
+
+        // Atualizar setores se já tiver tipo selecionado
+        const tipo = this.elements.tipoChecklistSelect.value;
+        if (tipo) {
+            this.preencherSetores(tipo);
+        }
+    }
+
+    /**
+     * Carrega locais da API para a unidade selecionada
+     */
+    async carregarLocaisDaUnidade(unidadeId) {
+        try {
+            const response = await fetch(`/api/config/locais?unidade=${unidadeId}`);
+            if (!response.ok) {
+                console.warn('API de locais não disponível, usando dados estáticos');
+                this.locaisDaUnidade = null;
+                return;
+            }
+
+            const locais = await response.json();
+
+            // Organizar locais por tipo e setor
+            this.locaisDaUnidade = {};
+            locais.forEach(local => {
+                const tipo = local.tipo_checklist_id;
+                const setor = local.setor;
+
+                if (!this.locaisDaUnidade[tipo]) {
+                    this.locaisDaUnidade[tipo] = {};
+                }
+                if (!this.locaisDaUnidade[tipo][setor]) {
+                    this.locaisDaUnidade[tipo][setor] = [];
+                }
+
+                this.locaisDaUnidade[tipo][setor].push({
+                    local: local.local,
+                    responsavel: local.responsaveis?.nome || 'N/A'
+                });
+            });
+
+            console.log('Locais carregados para unidade:', unidadeId, this.locaisDaUnidade);
+        } catch (error) {
+            console.warn('Erro ao carregar locais da API:', error);
+            this.locaisDaUnidade = null;
+        }
+    }
+
+    /**
+     * Obtém os locais (da API se disponível, senão do constants.js)
+     */
+    getLocaisPorTipo() {
+        return this.locaisDaUnidade || LOCAIS_POR_TIPO;
     }
 
     /**
@@ -188,7 +249,15 @@ class ChecklistApp {
 
         if (!tipo || !setor) return;
 
-        const salasDisponiveis = this.dataManager.getSalasDisponiveis(tipo, setor);
+        // Usar locais dinâmicos
+        const locaisData = this.getLocaisPorTipo();
+        const locaisDoSetor = (locaisData[tipo] || {})[setor] || [];
+
+        // Filtrar salas já visitadas
+        const salasDisponiveis = locaisDoSetor.filter(
+            item => !this.dataManager.salasVisitadas.includes(item.local)
+        );
+
         salasDisponiveis.forEach(item => {
             this.elements.localSelect.add(new Option(item.local, item.local));
         });
@@ -209,7 +278,8 @@ class ChecklistApp {
 
         const tipo = this.elements.tipoChecklistSelect.value;
         const setor = this.elements.setorSelect.value;
-        const locaisDoSetor = (LOCAIS_POR_TIPO[tipo] || {})[setor] || [];
+        const locaisData = this.getLocaisPorTipo();
+        const locaisDoSetor = (locaisData[tipo] || {})[setor] || [];
         const item = locaisDoSetor.find(i => i.local === local);
 
         if (item) {
@@ -248,7 +318,8 @@ class ChecklistApp {
         this.elements.localSelect.innerHTML = '<option value="">Selecione o Local</option>';
         this.elements.responsavelDiv.classList.add('hidden');
 
-        const setores = LOCAIS_POR_TIPO[tipo] || {};
+        const locaisData = this.getLocaisPorTipo();
+        const setores = locaisData[tipo] || {};
         Object.keys(setores).forEach(setor => {
             this.elements.setorSelect.add(new Option(setor, setor));
         });
@@ -379,7 +450,13 @@ class ChecklistApp {
 
         const tipo = this.elements.tipoChecklistSelect.value;
         const setor = this.elements.setorSelect.value;
-        const salasDisponiveis = this.dataManager.getSalasDisponiveis(tipo, setor);
+
+        // Usar locais dinâmicos
+        const locaisData = this.getLocaisPorTipo();
+        const locaisDoSetor = (locaisData[tipo] || {})[setor] || [];
+        const salasDisponiveis = locaisDoSetor.filter(
+            item => !this.dataManager.salasVisitadas.includes(item.local)
+        );
 
         if (salasDisponiveis.length > 0) {
             this.elements.localSelect.value = salasDisponiveis[0].local;
@@ -420,7 +497,8 @@ class ChecklistApp {
             return null;
         }
 
-        const locaisDoSetor = (LOCAIS_POR_TIPO[tipoChecklist] || {})[setor] || [];
+        const locaisData = this.getLocaisPorTipo();
+        const locaisDoSetor = (locaisData[tipoChecklist] || {})[setor] || [];
         const itemSelecionado = locaisDoSetor.find(item => item.local === local);
 
         return {

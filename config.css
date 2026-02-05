@@ -475,6 +475,12 @@ body {
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
 }
 
+.form-group select option {
+    background: #1a1a2e;
+    color: #ffffff;
+    padding: 0.5rem;
+}
+
 .form-group input::placeholder {
     color: rgba(255, 255, 255, 0.3);
 }
