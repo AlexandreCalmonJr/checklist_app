@@ -6,20 +6,40 @@ let supabaseAdmin = null;
 
 function getSupabase() {
     if (!supabase) {
-        supabase = createClient(
-            process.env.SUPABASE_URL,
-            process.env.SUPABASE_ANON_KEY
-        );
+        // Try different env var names (Vercel integration uses different names)
+        const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const anonKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        if (!url || !anonKey) {
+            console.error('Missing Supabase env vars:', {
+                url: !!url,
+                anonKey: !!anonKey,
+                availableVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+            });
+            throw new Error('Supabase configuration missing');
+        }
+
+        supabase = createClient(url, anonKey);
     }
     return supabase;
 }
 
 function getSupabaseAdmin() {
     if (!supabaseAdmin) {
-        supabaseAdmin = createClient(
-            process.env.SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        // Try different env var names
+        const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+
+        if (!url || !serviceKey) {
+            console.error('Missing Supabase admin env vars:', {
+                url: !!url,
+                serviceKey: !!serviceKey,
+                availableVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+            });
+            throw new Error('Supabase admin configuration missing');
+        }
+
+        supabaseAdmin = createClient(url, serviceKey);
     }
     return supabaseAdmin;
 }
@@ -45,6 +65,7 @@ async function verifyAuth(req) {
 
         return { user, error: null };
     } catch (err) {
+        console.error('Auth verification error:', err);
         return { user: null, error: 'Erro ao verificar autenticação' };
     }
 }
