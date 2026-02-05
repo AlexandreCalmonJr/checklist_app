@@ -2,7 +2,6 @@
   "name": "checklist-app",
   "version": "1.0.0",
   "description": "Hospital Teresa de Lisieux - Checklist App com Backend Supabase",
-  "type": "module",
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod"
