@@ -646,6 +646,12 @@ body {
     border-color: var(--primary);
 }
 
+.select-unidade option {
+    background: #1a1a2e;
+    color: #ffffff;
+    padding: 0.5rem;
+}
+
 .locais-container {
     background: var(--bg-card);
     border: 1px solid var(--border);
