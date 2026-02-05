@@ -9,12 +9,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Checklist" />
-  
+
   <title>Checklist Hospitalar</title>
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%233b82f6' width='192' height='192'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dominant-baseline='central' font-weight='bold'>✓</text></svg>" />
+  <link rel="apple-touch-icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%233b82f6' width='192' height='192'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dominant-baseline='central' font-weight='bold'>✓</text></svg>" />
 
   <!-- Design System CSS -->
   <link rel="stylesheet" href="styles.css">
@@ -41,6 +42,19 @@
             </p>
           </div>
         </div>
+        <!-- Link para Área Administrativa -->
+        <a href="config.html" class="btn-admin-link" title="Área Administrativa" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; 
+                  background: rgba(102, 126, 234, 0.1); border: 1px solid rgba(102, 126, 234, 0.3);
+                  border-radius: 8px; color: var(--color-primary, #667eea); text-decoration: none;
+                  font-size: 0.85rem; transition: all 0.2s ease;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+          Admin
+        </a>
       </div>
 
       <!-- Progress Bar -->
@@ -58,7 +72,7 @@
         <!-- Seleção de Unidade -->
         <fieldset class="fieldset animate-slide-up">
           <legend class="fieldset-legend">🏥 Selecionar Unidade</legend>
-          
+
           <div class="grid grid-2">
             <div class="form-group">
               <label class="form-label" for="unidade">Unidade</label>
@@ -131,11 +145,12 @@
             gap: var(--space-md);
           ">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
             </svg>
             <div>
-              <p style="margin: 0; font-size: var(--font-size-xs); opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;">
+              <p
+                style="margin: 0; font-size: var(--font-size-xs); opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;">
                 Responsável pela Área
               </p>
               <p style="margin: 0; font-size: var(--font-size-lg); font-weight: 600;" id="responsavelNome"></p>
@@ -144,7 +159,8 @@
         </div>
 
         <!-- Itens do Checklist - Melhorado -->
-        <div id="itensChecklistContainer" class="hidden" style="margin-top: var(--space-lg); margin-bottom: var(--space-lg);">
+        <div id="itensChecklistContainer" class="hidden"
+          style="margin-top: var(--space-lg); margin-bottom: var(--space-lg);">
           <div style="
             border: 2px solid var(--color-primary);
             border-radius: var(--radius-lg);
@@ -160,7 +176,7 @@
               gap: var(--space-sm);
             ">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
               </svg>
               Itens de Verificação
             </h3>
@@ -171,13 +187,15 @@
         <!-- Observações -->
         <div class="form-group" style="margin-top: var(--space-lg); margin-bottom: var(--space-lg);">
           <label class="form-label" for="observacoes">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              style="vertical-align: middle; margin-right: 8px;">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
             Observações
           </label>
-          <textarea id="observacoes" class="form-input" rows="4" placeholder="Adicione observações importantes..."></textarea>
+          <textarea id="observacoes" class="form-input" rows="4"
+            placeholder="Adicione observações importantes..."></textarea>
         </div>
         <div class="flex flex-wrap gap-md" style="justify-content: center; margin-top: var(--space-xl);">
           <button type="button" id="salvarSalaBtn" class="btn btn-primary">
@@ -263,7 +281,7 @@
         navigator.serviceWorker.register('/sw.js')
           .then(registration => {
             console.log('✅ Service Worker registrado com sucesso!', registration);
-            
+
             // Verificar atualizações periodicamente
             setInterval(() => {
               registration.update();
