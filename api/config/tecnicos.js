@@ -1,6 +1,6 @@
-const { getSupabaseAdmin, verifyAuth, setCorsHeaders } = require('../lib/supabase.js');
+import { getSupabaseAdmin, verifyAuth, setCorsHeaders } from '../lib/supabase.js';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
     setCorsHeaders(res);
 
     if (req.method === 'OPTIONS') {
@@ -75,4 +75,4 @@ module.exports = async function handler(req, res) {
         console.error('Tecnicos API error:', err);
         return res.status(500).json({ error: 'Erro interno do servidor' });
     }
-};
+}

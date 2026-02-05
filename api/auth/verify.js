@@ -1,9 +1,8 @@
-const { verifyAuth, setCorsHeaders } = require('../lib/supabase.js');
+import { verifyAuth, setCorsHeaders } from '../lib/supabase.js';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
     setCorsHeaders(res);
 
-    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return res.status(204).end();
     }
@@ -19,4 +18,4 @@ module.exports = async function handler(req, res) {
     }
 
     return res.status(200).json({ valid: true, user });
-};
+}

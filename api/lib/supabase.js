@@ -1,21 +1,21 @@
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client (lazy initialization)
 let supabase = null;
 let supabaseAdmin = null;
 
-function getSupabase() {
+export function getSupabase() {
     if (!supabase) {
-        // Try different env var names (Vercel integration uses different names)
-        const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const anonKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL ||
+            process.env.SUPABSE_SUPABASE_URL ||
+            process.env.SUPABASE_URL;
+
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+            process.env.SUPABSE_SUPABASE_ANON_KEY ||
+            process.env.SUPABASE_ANON_KEY;
 
         if (!url || !anonKey) {
-            console.error('Missing Supabase env vars:', {
-                url: !!url,
-                anonKey: !!anonKey,
-                availableVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
-            });
+            console.error('Missing Supabase env vars');
             throw new Error('Supabase configuration missing');
         }
 
@@ -24,18 +24,17 @@ function getSupabase() {
     return supabase;
 }
 
-function getSupabaseAdmin() {
+export function getSupabaseAdmin() {
     if (!supabaseAdmin) {
-        // Try different env var names
-        const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL ||
+            process.env.SUPABSE_SUPABASE_URL ||
+            process.env.SUPABASE_URL;
+
+        const serviceKey = process.env.SUPABSE_SUPABASE_SERVICE_ROLE_KEY ||
+            process.env.SUPABASE_SERVICE_ROLE_KEY;
 
         if (!url || !serviceKey) {
-            console.error('Missing Supabase admin env vars:', {
-                url: !!url,
-                serviceKey: !!serviceKey,
-                availableVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
-            });
+            console.error('Missing Supabase admin env vars');
             throw new Error('Supabase admin configuration missing');
         }
 
@@ -44,10 +43,7 @@ function getSupabaseAdmin() {
     return supabaseAdmin;
 }
 
-/**
- * Verifies the Authorization header and returns user data
- */
-async function verifyAuth(req) {
+export async function verifyAuth(req) {
     const authHeader = req.headers.authorization || req.headers['authorization'];
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -70,18 +66,8 @@ async function verifyAuth(req) {
     }
 }
 
-/**
- * Set CORS headers
- */
-function setCorsHeaders(res) {
+export function setCorsHeaders(res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
-
-module.exports = {
-    getSupabase,
-    getSupabaseAdmin,
-    verifyAuth,
-    setCorsHeaders
-};

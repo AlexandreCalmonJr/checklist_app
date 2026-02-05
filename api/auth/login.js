@@ -1,9 +1,8 @@
-const { getSupabase, setCorsHeaders } = require('../lib/supabase.js');
+import { getSupabase, setCorsHeaders } from '../lib/supabase.js';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
     setCorsHeaders(res);
 
-    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return res.status(204).end();
     }
@@ -26,7 +25,6 @@ module.exports = async function handler(req, res) {
         });
 
         if (error) {
-            console.error('Supabase auth error:', error);
             return res.status(401).json({ error: error.message });
         }
 
@@ -35,10 +33,7 @@ module.exports = async function handler(req, res) {
             session: data.session
         });
     } catch (err) {
-        console.error('Login error:', err.message, err.stack);
-        return res.status(500).json({
-            error: 'Erro interno do servidor',
-            details: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
+        console.error('Login error:', err);
+        return res.status(500).json({ error: 'Erro interno do servidor' });
     }
-};
+}
