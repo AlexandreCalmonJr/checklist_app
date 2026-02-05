@@ -246,7 +246,9 @@ body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .error-state svg,
@@ -603,5 +605,190 @@ body {
     .modal {
         margin: 1rem;
         max-width: calc(100% - 2rem);
+    }
+}
+
+/* === SEÇÃO LOCAIS POR UNIDADE === */
+.unidade-locais-container {
+    padding: 1.5rem;
+}
+
+.unidade-selector {
+    margin-bottom: 1.5rem;
+}
+
+.unidade-selector label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.select-unidade {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.select-unidade:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.locais-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.locais-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.locais-header h3 {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.locais-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-select-all,
+.btn-deselect-all {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-select-all:hover {
+    background: rgba(72, 187, 120, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.btn-deselect-all:hover {
+    background: rgba(252, 129, 129, 0.1);
+    border-color: var(--error);
+    color: var(--error);
+}
+
+.locais-checkboxes {
+    padding: 1.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.local-grupo {
+    margin-bottom: 1.5rem;
+}
+
+.local-grupo:last-child {
+    margin-bottom: 0;
+}
+
+.local-grupo h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.local-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.5rem;
+}
+
+.local-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.local-checkbox:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border);
+}
+
+.local-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.local-checkbox span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.local-checkbox:has(input:checked) {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--primary);
+}
+
+.local-checkbox:has(input:checked) span {
+    color: var(--text-primary);
+}
+
+.locais-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-save-locais {
+    padding: 0.875rem 2rem;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-save-locais:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+@media (max-width: 640px) {
+    .locais-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .local-items {
+        grid-template-columns: 1fr;
     }
 }

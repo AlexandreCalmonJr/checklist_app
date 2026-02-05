@@ -71,6 +71,13 @@
                 </svg>
                 Itens do Checklist
             </button>
+            <button class="nav-item" data-section="unidadeLocais">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                </svg>
+                Locais por Unidade
+            </button>
         </nav>
 
         <div class="sidebar-footer">
@@ -319,8 +326,27 @@
                     update: (id, data) => configManager.updateItem(id, { ...data, options: JSON.parse(data.options) }),
                     delete: (id) => configManager.deleteItem(id)
                 }
+            },
+            unidadeLocais: {
+                title: 'Locais por Unidade',
+                isCustomSection: true, // Seção especial com UI customizada
+                columns: [],
+                fields: [],
+                getRowData: () => [],
+                manager: {
+                    get: async () => {
+                        const unidades = await configManager.getUnidades();
+                        const locais = await configManager.getLocais();
+                        return { unidades, locais: locais.raw || locais };
+                    }
+                }
             }
         };
+
+        // Variables for unidadeLocais section
+        let selectedUnidadeId = null;
+        let allLocais = [];
+        let unidadeLocaisMap = {};
 
         // Initialize app
         async function init() {
@@ -392,10 +418,19 @@
                 item.classList.toggle('active', item.dataset.section === section);
             });
 
+            // Hide/show add button based on section type
+            btnAdd.style.display = config.isCustomSection ? 'none' : '';
+
             // Show loading
             showLoading();
 
             try {
+                // Custom section: Locais por Unidade
+                if (config.isCustomSection && section === 'unidadeLocais') {
+                    await loadUnidadeLocaisSection();
+                    return;
+                }
+
                 // Load select options for locais and itens
                 if (section === 'locais' || section === 'itens') {
                     await loadSelectOptions(section);
@@ -409,6 +444,136 @@
             } catch (error) {
                 showError(error.message);
             }
+        }
+
+        // ========== SEÇÃO CUSTOMIZADA: LOCAIS POR UNIDADE ==========
+        async function loadUnidadeLocaisSection() {
+            const data = await sectionConfig.unidadeLocais.manager.get();
+            const unidades = data.unidades || [];
+            allLocais = data.locais || [];
+
+            // Agrupar locais por setor/tipo
+            const locaisAgrupados = {};
+            allLocais.forEach(local => {
+                const key = `${local.tipo_checklist_id} - ${local.setor}`;
+                if (!locaisAgrupados[key]) locaisAgrupados[key] = [];
+                locaisAgrupados[key].push(local);
+            });
+
+            // Render custom UI
+            tableContainer.innerHTML = `
+                <div class="unidade-locais-container">
+                    <div class="unidade-selector">
+                        <label for="selectUnidade">Selecione a Unidade:</label>
+                        <select id="selectUnidade" class="select-unidade">
+                            <option value="">-- Escolha uma unidade --</option>
+                            ${unidades.map(u => `<option value="${u.id}">${u.nome} (${u.sigla})</option>`).join('')}
+                        </select>
+                    </div>
+                    <div id="locaisContainer" class="locais-container" style="display: none;">
+                        <div class="locais-header">
+                            <h3>Marque os locais disponíveis para esta unidade:</h3>
+                            <div class="locais-actions">
+                                <button type="button" class="btn-select-all" id="btnSelectAll">Selecionar Todos</button>
+                                <button type="button" class="btn-deselect-all" id="btnDeselectAll">Desmarcar Todos</button>
+                            </div>
+                        </div>
+                        <div id="locaisCheckboxes" class="locais-checkboxes">
+                            ${Object.entries(locaisAgrupados).map(([grupo, items]) => `
+                                <div class="local-grupo">
+                                    <h4>${grupo}</h4>
+                                    <div class="local-items">
+                                        ${items.map(local => `
+                                            <label class="local-checkbox">
+                                                <input type="checkbox" name="local_${local.id}" value="${local.id}">
+                                                <span>${local.local}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="locais-footer">
+                            <button type="button" class="btn-save-locais" id="btnSaveLocais">Salvar Associações</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            showTable();
+
+            // Setup event listeners
+            const selectUnidade = document.getElementById('selectUnidade');
+            const locaisContainer = document.getElementById('locaisContainer');
+            const btnSelectAll = document.getElementById('btnSelectAll');
+            const btnDeselectAll = document.getElementById('btnDeselectAll');
+            const btnSaveLocais = document.getElementById('btnSaveLocais');
+
+            selectUnidade.addEventListener('change', async (e) => {
+                selectedUnidadeId = e.target.value;
+                if (!selectedUnidadeId) {
+                    locaisContainer.style.display = 'none';
+                    return;
+                }
+                locaisContainer.style.display = 'block';
+
+                // Buscar locais já associados a esta unidade
+                try {
+                    const response = await authManager.apiRequest(`/config/unidade-locais?unidade=${selectedUnidadeId}`);
+                    const associados = await response.json();
+                    const associadosIds = associados.map(l => l.id);
+
+                    // Marcar checkboxes
+                    document.querySelectorAll('#locaisCheckboxes input[type="checkbox"]').forEach(cb => {
+                        cb.checked = associadosIds.includes(parseInt(cb.value));
+                    });
+                } catch (error) {
+                    console.error('Erro ao buscar locais associados:', error);
+                    // Desmarcar todos em caso de erro
+                    document.querySelectorAll('#locaisCheckboxes input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                    });
+                }
+            });
+
+            btnSelectAll.addEventListener('click', () => {
+                document.querySelectorAll('#locaisCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = true);
+            });
+
+            btnDeselectAll.addEventListener('click', () => {
+                document.querySelectorAll('#locaisCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+            });
+
+            btnSaveLocais.addEventListener('click', async () => {
+                if (!selectedUnidadeId) {
+                    showToast('Selecione uma unidade primeiro', 'error');
+                    return;
+                }
+
+                const checkedIds = [];
+                document.querySelectorAll('#locaisCheckboxes input[type="checkbox"]:checked').forEach(cb => {
+                    checkedIds.push(parseInt(cb.value));
+                });
+
+                try {
+                    const response = await authManager.apiRequest('/config/unidade-locais', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            unidade_id: selectedUnidadeId,
+                            local_ids: checkedIds
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Erro ao salvar');
+                    }
+
+                    showToast(`${checkedIds.length} locais associados com sucesso!`, 'success');
+                } catch (error) {
+                    showToast(error.message, 'error');
+                }
+            });
         }
 
         async function loadSelectOptions(section) {
