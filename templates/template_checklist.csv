@@ -1,0 +1,46 @@
+## INSTRUÇÕES PARA PREENCHER O TEMPLATE
+## 
+## Este arquivo serve como modelo para cadastrar um novo hospital no sistema.
+## O hospital deve preencher TODAS as abas/seções e enviar para o admin da TI.
+##
+## FORMATOS ACEITOS: .json (recomendado) ou .csv (este arquivo)
+##
+## REGRAS:
+## - tipo_checklist deve ser um dos: centroCirurgico, racks, emergencia, totensepaineis
+## - responsavel deve ser o ID do responsável (ex: ATENDIMENTO, ENFERMAGEM, TI, IMAGEM, FARMACIA)
+## - Adicione quantas linhas precisar em cada seção
+## - Não modifique os cabeçalhos das seções (linhas que começam com ##)
+##
+
+## HOSPITAL
+nome,sigla
+Hospital Exemplo,HEX
+
+## RESPONSAVEIS
+id,nome
+ATENDIMENTO,Supervisão de Atendimento
+ENFERMAGEM,Enfermagem
+TI,TI
+IMAGEM,Vida e Imagem
+FARMACIA,Farmácia
+
+## TECNICOS
+nome
+João Silva
+Maria Santos
+Carlos Oliveira
+Ana Costa
+
+## LOCAIS
+tipo_checklist,setor,local,responsavel
+centroCirurgico,Centro Cirúrgico,SALA 01,ENFERMAGEM
+centroCirurgico,Centro Cirúrgico,SALA 02,ENFERMAGEM
+centroCirurgico,Centro Cirúrgico,SALA 03,ENFERMAGEM
+racks,Racks,Rack Principal Terreo,TI
+racks,Racks,Rack 1º Andar,TI
+racks,Racks,Rack 2º Andar,TI
+emergencia,Emergência Adulta,CONSULTÓRIO ADULTO 1,ATENDIMENTO
+emergencia,Emergência Adulta,CONSULTÓRIO ADULTO 2,ATENDIMENTO
+emergencia,Emergência Adulta,Farmácia ADT 01,FARMACIA
+totensepaineis,TOTEM,TOTEM ADT 01,ATENDIMENTO
+totensepaineis,PAINÉIS,PAINEL ADULTO,ATENDIMENTO

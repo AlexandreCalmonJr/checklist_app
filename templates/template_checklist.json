@@ -1,0 +1,108 @@
+{
+    "hospital": {
+        "nome": "Hospital Exemplo",
+        "sigla": "HEX"
+    },
+    "responsaveis": [
+        {
+            "id": "ATENDIMENTO",
+            "nome": "Supervisão de Atendimento"
+        },
+        {
+            "id": "ENFERMAGEM",
+            "nome": "Enfermagem"
+        },
+        {
+            "id": "TI",
+            "nome": "TI"
+        },
+        {
+            "id": "IMAGEM",
+            "nome": "Vida e Imagem"
+        },
+        {
+            "id": "FARMACIA",
+            "nome": "Farmácia"
+        }
+    ],
+    "tecnicos": [
+        "João Silva",
+        "Maria Santos",
+        "Carlos Oliveira",
+        "Ana Costa"
+    ],
+    "tipos_checklist": [
+        {
+            "id": "centroCirurgico",
+            "nome": "Centro Cirúrgico"
+        },
+        {
+            "id": "racks",
+            "nome": "Racks"
+        },
+        {
+            "id": "emergencia",
+            "nome": "Emergência"
+        },
+        {
+            "id": "totensepaineis",
+            "nome": "Totens e Painéis"
+        }
+    ],
+    "locais": [
+        {
+            "tipo_checklist": "centroCirurgico",
+            "setor": "Centro Cirúrgico",
+            "local": "SALA 01",
+            "responsavel": "ENFERMAGEM"
+        },
+        {
+            "tipo_checklist": "centroCirurgico",
+            "setor": "Centro Cirúrgico",
+            "local": "SALA 02",
+            "responsavel": "ENFERMAGEM"
+        },
+        {
+            "tipo_checklist": "racks",
+            "setor": "Racks",
+            "local": "Rack Principal Terreo",
+            "responsavel": "TI"
+        },
+        {
+            "tipo_checklist": "racks",
+            "setor": "Racks",
+            "local": "Rack 1º Andar",
+            "responsavel": "TI"
+        },
+        {
+            "tipo_checklist": "emergencia",
+            "setor": "Emergência Adulta",
+            "local": "CONSULTÓRIO ADULTO 1",
+            "responsavel": "ATENDIMENTO"
+        },
+        {
+            "tipo_checklist": "emergencia",
+            "setor": "Emergência Adulta",
+            "local": "CONSULTÓRIO ADULTO 2",
+            "responsavel": "ATENDIMENTO"
+        },
+        {
+            "tipo_checklist": "emergencia",
+            "setor": "Emergência Adulta",
+            "local": "Farmácia ADT 01",
+            "responsavel": "FARMACIA"
+        },
+        {
+            "tipo_checklist": "totensepaineis",
+            "setor": "TOTEM",
+            "local": "TOTEM ADT 01",
+            "responsavel": "ATENDIMENTO"
+        },
+        {
+            "tipo_checklist": "totensepaineis",
+            "setor": "PAINÉIS",
+            "local": "PAINEL ADULTO",
+            "responsavel": "ATENDIMENTO"
+        }
+    ]
+}

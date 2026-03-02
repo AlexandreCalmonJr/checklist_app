@@ -805,3 +805,267 @@ select option {
         grid-template-columns: 1fr;
     }
 }
+
+/* === SEÇÃO IMPORTAR DADOS === */
+.import-container {
+    padding: 1.5rem;
+}
+
+.import-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.import-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.import-section p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.template-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.btn-template {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-template:hover {
+    background: rgba(102, 126, 234, 0.15);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.file-upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2.5rem;
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.file-upload-area:hover,
+.file-upload-area.drag-over {
+    border-color: var(--primary);
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.file-upload-area.drag-over {
+    transform: scale(1.02);
+}
+
+.file-upload-area svg {
+    color: var(--text-secondary);
+}
+
+.file-upload-area p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* Preview */
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.preview-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.preview-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.preview-card h4 {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+}
+
+.preview-card p {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    background: rgba(102, 126, 234, 0.15);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--primary);
+    margin: 0.15rem;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.75rem;
+}
+
+.preview-table th,
+.preview-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+.preview-table th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.preview-errors {
+    background: rgba(252, 129, 129, 0.1);
+    border: 1px solid var(--error);
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+.preview-errors h4 {
+    color: var(--error);
+    margin-bottom: 0.5rem;
+}
+
+.preview-errors ul {
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* Import Actions */
+.import-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-content: flex-end;
+}
+
+.btn-cancel-import {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel-import:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.btn-confirm-import {
+    padding: 0.75rem 2rem;
+    background: linear-gradient(135deg, var(--success), #38a169);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-confirm-import:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.3);
+}
+
+/* Result */
+.result-success {
+    text-align: center;
+}
+
+.result-success h4 {
+    font-size: 1.25rem;
+    color: var(--success);
+    margin-bottom: 1rem;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.result-item {
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.result-warnings {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(246, 173, 85, 0.1);
+    border: 1px solid var(--warning);
+    border-radius: 10px;
+    text-align: left;
+}
+
+.result-warnings h4 {
+    color: var(--warning);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.result-warnings ul {
+    padding-left: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+    .template-buttons {
+        flex-direction: column;
+    }
+    .preview-grid {
+        grid-template-columns: 1fr;
+    }
+    .import-actions {
+        flex-direction: column;
+    }
+}

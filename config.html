@@ -78,6 +78,14 @@
                 </svg>
                 Locais por Unidade
             </button>
+            <button class="nav-item" data-section="importar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Importar Dados
+            </button>
         </nav>
 
         <div class="sidebar-footer">
@@ -329,7 +337,7 @@
             },
             unidadeLocais: {
                 title: 'Locais por Unidade',
-                isCustomSection: true, // Seção especial com UI customizada
+                isCustomSection: true,
                 columns: [],
                 fields: [],
                 getRowData: () => [],
@@ -340,6 +348,14 @@
                         return { unidades, locais: locais.raw || locais };
                     }
                 }
+            },
+            importar: {
+                title: 'Importar Dados',
+                isCustomSection: true,
+                columns: [],
+                fields: [],
+                getRowData: () => [],
+                manager: { get: async () => ({}) }
             }
         };
 
@@ -425,9 +441,13 @@
             showLoading();
 
             try {
-                // Custom section: Locais por Unidade
+                // Custom sections
                 if (config.isCustomSection && section === 'unidadeLocais') {
                     await loadUnidadeLocaisSection();
+                    return;
+                }
+                if (config.isCustomSection && section === 'importar') {
+                    loadImportarSection();
                     return;
                 }
 
@@ -629,6 +649,233 @@
                     showToast(error.message, 'error');
                 }
             });
+        }
+
+        // ========== SEÇÃO CUSTOMIZADA: IMPORTAR DADOS ==========
+        let importData = null; // Stores parsed data for import
+
+        function loadImportarSection() {
+            tableContainer.innerHTML = `
+                <div class="import-container">
+                    <div class="import-section">
+                        <h3>📥 Baixar Template</h3>
+                        <p>Baixe o arquivo de modelo, preencha com os dados do hospital e depois importe aqui.</p>
+                        <div class="template-buttons">
+                            <a href="/api/import/template?format=csv" download class="btn-template">📄 CSV</a>
+                            <a href="/api/import/template?format=json" download class="btn-template">📋 JSON</a>
+                            <a href="/api/import/template?format=xlsx" download class="btn-template">📊 Excel</a>
+                            <a href="/api/import/template?format=pdf" download class="btn-template">📕 PDF</a>
+                        </div>
+                    </div>
+
+                    <div class="import-section">
+                        <h3>📤 Importar Arquivo</h3>
+                        <p>Selecione o arquivo preenchido (.csv, .json, .xlsx ou .xls)</p>
+                        <div class="file-upload-area" id="fileUploadArea">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Arraste o arquivo aqui ou clique para selecionar</p>
+                            <input type="file" id="importFile" accept=".csv,.json,.xlsx,.xls" style="display:none">
+                        </div>
+                        <div id="fileName" style="margin-top: 8px; color: var(--text-secondary);"></div>
+                    </div>
+
+                    <div class="import-section" id="previewSection" style="display:none;">
+                        <h3>👁️ Preview da Importação</h3>
+                        <div id="previewContent" class="preview-content"></div>
+                        <div class="import-actions">
+                            <button type="button" class="btn-cancel-import" id="btnCancelImport">Cancelar</button>
+                            <button type="button" class="btn-confirm-import" id="btnConfirmImport">✅ Confirmar Importação</button>
+                        </div>
+                    </div>
+
+                    <div class="import-section" id="resultSection" style="display:none;">
+                        <h3>📊 Resultado</h3>
+                        <div id="resultContent" class="result-content"></div>
+                    </div>
+                </div>
+            `;
+
+            showTable();
+
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            const importFile = document.getElementById('importFile');
+            const fileName = document.getElementById('fileName');
+
+            // Click to upload
+            fileUploadArea.addEventListener('click', () => importFile.click());
+
+            // Drag and drop
+            fileUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUploadArea.classList.add('drag-over');
+            });
+            fileUploadArea.addEventListener('dragleave', () => {
+                fileUploadArea.classList.remove('drag-over');
+            });
+            fileUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUploadArea.classList.remove('drag-over');
+                if (e.dataTransfer.files.length > 0) {
+                    handleImportFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            // File input change
+            importFile.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleImportFile(e.target.files[0]);
+                }
+            });
+        }
+
+        async function handleImportFile(file) {
+            const fileName = document.getElementById('fileName');
+            fileName.textContent = `📁 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+            const ext = file.name.split('.').pop().toLowerCase();
+            let content, format;
+
+            try {
+                if (ext === 'json') {
+                    content = await file.text();
+                    format = 'json';
+                } else if (ext === 'csv') {
+                    content = await file.text();
+                    format = 'csv';
+                } else if (ext === 'xlsx' || ext === 'xls') {
+                    // Read Excel as base64
+                    const buffer = await file.arrayBuffer();
+                    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                    content = base64;
+                    format = 'xlsx';
+                } else {
+                    showToast('Formato não suportado. Use .csv, .json ou .xlsx', 'error');
+                    return;
+                }
+
+                // Send to preview endpoint
+                const response = await fetch('/api/import/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content, format })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    showToast(result.error || 'Erro ao processar arquivo', 'error');
+                    if (result.errors) {
+                        document.getElementById('previewSection').style.display = 'block';
+                        document.getElementById('previewContent').innerHTML = `
+                            <div class="preview-errors">
+                                <h4>⚠️ Erros encontrados:</h4>
+                                <ul>${result.errors.map(e => `<li>${e}</li>`).join('')}</ul>
+                            </div>
+                        `;
+                    }
+                    return;
+                }
+
+                importData = result.data;
+                const preview = result.preview;
+
+                // Show preview
+                document.getElementById('previewSection').style.display = 'block';
+                document.getElementById('previewContent').innerHTML = `
+                    <div class="preview-grid">
+                        <div class="preview-card">
+                            <h4>🏥 Hospital</h4>
+                            <p><strong>Nome:</strong> ${preview.hospital.nome}</p>
+                            <p><strong>Sigla:</strong> ${preview.hospital.sigla}</p>
+                            <p><strong>ID (auto):</strong> ${preview.hospital.id}</p>
+                        </div>
+                        <div class="preview-card">
+                            <h4>👥 Responsáveis</h4>
+                            <p>${preview.responsaveis} cadastrados</p>
+                            ${importData.responsaveis.map(r => `<span class="tag">${r.id}</span>`).join(' ')}
+                        </div>
+                        <div class="preview-card">
+                            <h4>🔧 Técnicos</h4>
+                            <p>${preview.tecnicos} cadastrados</p>
+                            ${importData.tecnicos.map(t => `<span class="tag">${t}</span>`).join(' ')}
+                        </div>
+                        <div class="preview-card">
+                            <h4>📋 Tipos de Checklist</h4>
+                            <p>${preview.tipos_checklist} tipos</p>
+                            ${importData.tipos_checklist.map(t => `<span class="tag">${t.nome}</span>`).join(' ')}
+                        </div>
+                        <div class="preview-card full-width">
+                            <h4>📍 Locais (${preview.locais} total)</h4>
+                            <table class="preview-table">
+                                <thead><tr><th>Tipo</th><th>Setor</th><th>Qtd Locais</th></tr></thead>
+                                <tbody>
+                                    ${Object.entries(preview.locais_por_setor).map(([setor, count]) =>
+                    `<tr><td>${importData.locais.find(l => l.setor === setor)?.tipo_checklist || '-'}</td><td>${setor}</td><td>${count}</td></tr>`
+                ).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                // Setup buttons
+                document.getElementById('btnCancelImport').addEventListener('click', () => {
+                    importData = null;
+                    document.getElementById('previewSection').style.display = 'none';
+                    document.getElementById('resultSection').style.display = 'none';
+                });
+
+                document.getElementById('btnConfirmImport').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/api/import/execute', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ data: importData })
+                        });
+
+                        const result = await response.json();
+
+                        if (!response.ok) {
+                            showToast(result.error || 'Erro na importação', 'error');
+                            return;
+                        }
+
+                        // Show results
+                        document.getElementById('resultSection').style.display = 'block';
+                        document.getElementById('previewSection').style.display = 'none';
+                        document.getElementById('resultContent').innerHTML = `
+                            <div class="result-success">
+                                <h4>✅ Importação concluída!</h4>
+                                <div class="result-grid">
+                                    <div class="result-item"><strong>Hospital:</strong> ${result.results.created.hospital}</div>
+                                    <div class="result-item"><strong>Responsáveis:</strong> ${result.results.created.responsaveis}</div>
+                                    <div class="result-item"><strong>Técnicos:</strong> ${result.results.created.tecnicos}</div>
+                                    <div class="result-item"><strong>Tipos:</strong> ${result.results.created.tipos_checklist}</div>
+                                    <div class="result-item"><strong>Locais novos:</strong> ${result.results.created.locais}</div>
+                                    ${result.results.created.locais_reusados > 0 ? `<div class="result-item"><strong>Locais reusados:</strong> ${result.results.created.locais_reusados} (já existiam)</div>` : ''}
+                                </div>
+                                ${result.results.errors.length > 0 ? `
+                                    <div class="result-warnings">
+                                        <h4>⚠️ Avisos:</h4>
+                                        <ul>${result.results.errors.map(e => `<li>${e}</li>`).join('')}</ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+
+                        showToast('Importação concluída com sucesso!', 'success');
+                    } catch (error) {
+                        showToast(error.message, 'error');
+                    }
+                });
+
+            } catch (error) {
+                showToast(`Erro ao ler arquivo: ${error.message}`, 'error');
+            }
         }
 
         async function loadSelectOptions(section) {
