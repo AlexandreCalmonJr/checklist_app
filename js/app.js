@@ -4,12 +4,12 @@
  */
 
 // Importações
-import { ThemeManager } from './modules/themeManager.js';
-import { notify } from './modules/notificationManager.js';
-import { DataManager } from './modules/dataManager.js';
-import { UNIDADES, TECNICOS, LOCAIS_POR_TIPO, ITENS_CONFIG, PDF_COLUMNS_CONFIG, STORAGE_KEYS } from './utils/constants.js';
-import { formatDateForInput, sanitizeId, isCanvasEmpty } from './utils/helpers.js';
-import { StorageManager } from './utils/storage.js';
+import { ThemeManager } from '../modules/themeManager.js';
+import { notify } from '../modules/notificationManager.js';
+import { DataManager } from '../modules/dataManager.js';
+import { UNIDADES, TECNICOS, LOCAIS_POR_TIPO, ITENS_CONFIG, PDF_COLUMNS_CONFIG, STORAGE_KEYS } from '../utils/constants.js';
+import { formatDateForInput, sanitizeId, isCanvasEmpty } from '../utils/helpers.js';
+import { StorageManager } from '../utils/storage.js';
 
 // Expor PDF_COLUMNS_CONFIG para uso no PDF
 window.PDF_COLUMNS_CONFIG = PDF_COLUMNS_CONFIG;
