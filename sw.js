@@ -66,6 +66,16 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Cache API só suporta GET — não interceptar POST/PUT/DELETE
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Não cachear chamadas de API
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   // Estratégia Network First com fallback para cache
   event.respondWith(
     fetch(request)
