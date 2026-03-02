@@ -86,6 +86,14 @@
                 </svg>
                 Importar Dados
             </button>
+            <button class="nav-item" data-section="sync">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Sincronização
+            </button>
         </nav>
 
         <div class="sidebar-footer">
@@ -356,6 +364,14 @@
                 fields: [],
                 getRowData: () => [],
                 manager: { get: async () => ({}) }
+            },
+            sync: {
+                title: 'Sincronização',
+                isCustomSection: true,
+                columns: [],
+                fields: [],
+                getRowData: () => [],
+                manager: { get: async () => ({}) }
             }
         };
 
@@ -448,6 +464,10 @@
                 }
                 if (config.isCustomSection && section === 'importar') {
                     loadImportarSection();
+                    return;
+                }
+                if (config.isCustomSection && section === 'sync') {
+                    loadSyncSection();
                     return;
                 }
 
@@ -809,18 +829,81 @@
                             ${importData.tipos_checklist.map(t => `<span class="tag">${t.nome}</span>`).join(' ')}
                         </div>
                         <div class="preview-card full-width">
-                            <h4>📍 Locais (${preview.locais} total)</h4>
-                            <table class="preview-table">
-                                <thead><tr><th>Tipo</th><th>Setor</th><th>Qtd Locais</th></tr></thead>
-                                <tbody>
-                                    ${Object.entries(preview.locais_por_setor).map(([setor, count]) =>
-                    `<tr><td>${importData.locais.find(l => l.setor === setor)?.tipo_checklist || '-'}</td><td>${setor}</td><td>${count}</td></tr>`
+                            <h4 id="locaisCount">📍 Locais (${preview.locais} total)</h4>
+                            <div class="locais-filters">
+                                <select id="filterTipo" class="filter-select">
+                                    <option value="">Todos os Tipos</option>
+                                    ${[...new Set(importData.locais.map(l => l.tipo_checklist))].map(t => `<option value="${t}">${t}</option>`).join('')}
+                                </select>
+                                <select id="filterSetor" class="filter-select">
+                                    <option value="">Todos os Setores</option>
+                                    ${[...new Set(importData.locais.map(l => l.setor))].map(s => `<option value="${s}">${s}</option>`).join('')}
+                                </select>
+                                <select id="filterResp" class="filter-select">
+                                    <option value="">Todos Responsáveis</option>
+                                    ${[...new Set(importData.locais.map(l => l.responsavel).filter(Boolean))].map(r => `<option value="${r}">${r}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="locais-actions" style="margin-bottom: 0.5rem;">
+                                <button type="button" class="btn-select-all" id="btnSelectAllImport">Selecionar Visíveis</button>
+                                <button type="button" class="btn-deselect-all" id="btnDeselectAllImport">Desmarcar Visíveis</button>
+                                <span id="selectedCount" style="color: var(--text-secondary); font-size: 0.85rem; margin-left: 0.5rem;"></span>
+                            </div>
+                            <div style="max-height: 400px; overflow-y: auto;">
+                                <table class="preview-table">
+                                    <thead><tr><th style="width:30px;"><input type="checkbox" id="checkAllLocais" checked></th><th>Tipo</th><th>Setor</th><th>Local</th><th>Responsável</th></tr></thead>
+                                    <tbody id="locaisPreviewBody">
+                                        ${importData.locais.map((l, i) =>
+                    `<tr data-tipo="${l.tipo_checklist}" data-setor="${l.setor}" data-resp="${l.responsavel || ''}">
+                                                <td><input type="checkbox" class="local-check" data-index="${i}" checked></td>
+                                                <td>${l.tipo_checklist}</td><td>${l.setor}</td><td>${l.local}</td><td>${l.responsavel || '-'}</td>
+                                            </tr>`
                 ).join('')}
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 `;
+
+                // Locais filter and selection logic
+                const updateSelectedCount = () => {
+                    const checked = document.querySelectorAll('.local-check:checked').length;
+                    const total = document.querySelectorAll('.local-check').length;
+                    document.getElementById('selectedCount').textContent = `${checked} de ${total} selecionados`;
+                    document.getElementById('locaisCount').textContent = `📍 Locais (${checked} de ${preview.locais} selecionados)`;
+                };
+
+                const applyFilters = () => {
+                    const tipo = document.getElementById('filterTipo').value;
+                    const setor = document.getElementById('filterSetor').value;
+                    const resp = document.getElementById('filterResp').value;
+                    document.querySelectorAll('#locaisPreviewBody tr').forEach(row => {
+                        const matchTipo = !tipo || row.dataset.tipo === tipo;
+                        const matchSetor = !setor || row.dataset.setor === setor;
+                        const matchResp = !resp || row.dataset.resp === resp;
+                        row.style.display = (matchTipo && matchSetor && matchResp) ? '' : 'none';
+                    });
+                };
+
+                document.getElementById('filterTipo').addEventListener('change', applyFilters);
+                document.getElementById('filterSetor').addEventListener('change', applyFilters);
+                document.getElementById('filterResp').addEventListener('change', applyFilters);
+
+                document.getElementById('btnSelectAllImport').addEventListener('click', () => {
+                    document.querySelectorAll('#locaisPreviewBody tr:not([style*="display: none"]) .local-check').forEach(cb => cb.checked = true);
+                    updateSelectedCount();
+                });
+                document.getElementById('btnDeselectAllImport').addEventListener('click', () => {
+                    document.querySelectorAll('#locaisPreviewBody tr:not([style*="display: none"]) .local-check').forEach(cb => cb.checked = false);
+                    updateSelectedCount();
+                });
+                document.getElementById('checkAllLocais').addEventListener('change', (e) => {
+                    document.querySelectorAll('#locaisPreviewBody tr:not([style*="display: none"]) .local-check').forEach(cb => cb.checked = e.target.checked);
+                    updateSelectedCount();
+                });
+                document.querySelectorAll('.local-check').forEach(cb => cb.addEventListener('change', updateSelectedCount));
+                updateSelectedCount();
 
                 // Setup buttons
                 document.getElementById('btnCancelImport').addEventListener('click', () => {
@@ -831,10 +914,21 @@
 
                 document.getElementById('btnConfirmImport').addEventListener('click', async () => {
                     try {
+                        // Only import selected locais
+                        const selectedIndexes = [];
+                        document.querySelectorAll('.local-check:checked').forEach(cb => {
+                            selectedIndexes.push(parseInt(cb.dataset.index));
+                        });
+                        if (selectedIndexes.length === 0) {
+                            showToast('Selecione pelo menos um local para importar', 'error');
+                            return;
+                        }
+                        const dataToImport = { ...importData, locais: selectedIndexes.map(i => importData.locais[i]) };
+
                         const response = await fetch('/api/import/execute', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ data: importData })
+                            body: JSON.stringify({ data: dataToImport })
                         });
 
                         const result = await response.json();
@@ -876,6 +970,192 @@
             } catch (error) {
                 showToast(`Erro ao ler arquivo: ${error.message}`, 'error');
             }
+        }
+
+        // ========== SEÇÃO CUSTOMIZADA: SINCRONIZAÇÃO ==========
+        async function loadSyncSection() {
+            tableContainer.innerHTML = `
+                <div class="import-container">
+                    <div class="import-section">
+                        <h3>🔄 Status da Sincronização</h3>
+                        <div id="syncStatus">Carregando...</div>
+                    </div>
+
+                    <div class="import-section">
+                        <h3>⚡ Ações</h3>
+                        <p>Sincronize os dados entre o servidor local e o Supabase (Vercel).</p>
+                        <div class="sync-buttons">
+                            <button type="button" class="btn-sync btn-pull" id="btnSyncPull">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Pull (Supabase → Local)
+                            </button>
+                            <button type="button" class="btn-sync btn-push" id="btnSyncPush">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                    <polyline points="17 14 12 9 7 14"></polyline>
+                                    <line x1="12" y1="9" x2="12" y2="21"></line>
+                                </svg>
+                                Push (Local → Supabase)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="import-section" id="syncLogSection" style="display:none;">
+                        <h3>📋 Log da Sincronização</h3>
+                        <div id="syncLog"></div>
+                    </div>
+                </div>
+            `;
+
+            showTable();
+            await refreshSyncStatus();
+
+            // Pull button
+            document.getElementById('btnSyncPull').addEventListener('click', async () => {
+                const btn = document.getElementById('btnSyncPull');
+                btn.disabled = true;
+                btn.textContent = '⏳ Puxando dados...';
+
+                try {
+                    const response = await fetch('/api/sync/pull', { method: 'POST' });
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        showToast(result.error || 'Erro no pull', 'error');
+                        showSyncLog('pull', null, result.error);
+                    } else {
+                        showToast('Pull concluído com sucesso!', 'success');
+                        showSyncLog('pull', result);
+                        await refreshSyncStatus();
+                    }
+                } catch (err) {
+                    showToast(`Erro: ${err.message}`, 'error');
+                    showSyncLog('pull', null, err.message);
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Pull (Supabase → Local)`;
+            });
+
+            // Push button
+            document.getElementById('btnSyncPush').addEventListener('click', async () => {
+                const btn = document.getElementById('btnSyncPush');
+                btn.disabled = true;
+                btn.textContent = '⏳ Enviando dados...';
+
+                try {
+                    const response = await fetch('/api/sync/push', { method: 'POST' });
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        showToast(result.error || 'Erro no push', 'error');
+                        showSyncLog('push', null, result.error);
+                    } else {
+                        showToast('Push concluído com sucesso!', 'success');
+                        showSyncLog('push', result);
+                        await refreshSyncStatus();
+                    }
+                } catch (err) {
+                    showToast(`Erro: ${err.message}`, 'error');
+                    showSyncLog('push', null, err.message);
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="17 14 12 9 7 14"></polyline><line x1="12" y1="9" x2="12" y2="21"></line></svg> Push (Local → Supabase)`;
+            });
+        }
+
+        async function refreshSyncStatus() {
+            try {
+                const response = await fetch('/api/sync/status');
+                const status = await response.json();
+
+                const statusEl = document.getElementById('syncStatus');
+                const tableNames = {
+                    unidades: 'Unidades',
+                    responsaveis: 'Responsáveis',
+                    tecnicos: 'Técnicos',
+                    tipos_checklist: 'Tipos de Checklist',
+                    locais: 'Locais',
+                    itens_config: 'Itens de Config',
+                    unidade_locais: 'Unidade-Locais'
+                };
+
+                statusEl.innerHTML = `
+                    <div class="sync-status-grid">
+                        <div class="sync-status-card ${status.sync_available ? 'status-ok' : 'status-error'}">
+                            <span class="status-icon">${status.sync_available ? '✅' : '❌'}</span>
+                            <div>
+                                <strong>Supabase</strong>
+                                <p>${status.sync_available ? 'Conectado' : 'Não configurado'}</p>
+                                ${status.supabase_url ? `<small>${status.supabase_url}</small>` : ''}
+                            </div>
+                        </div>
+                        <div class="sync-status-card status-ok">
+                            <span class="status-icon">💾</span>
+                            <div>
+                                <strong>SQLite Local</strong>
+                                <p>Ativo</p>
+                                <small>./data/checklist.db</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 style="margin: 1rem 0 0.5rem;">📊 Registros no Banco Local</h4>
+                    <table class="preview-table">
+                        <thead><tr><th>Tabela</th><th>Registros</th></tr></thead>
+                        <tbody>
+                            ${Object.entries(status.local_database).map(([key, count]) =>
+                    `<tr><td>${tableNames[key] || key}</td><td><strong>${count}</strong></td></tr>`
+                ).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (err) {
+                document.getElementById('syncStatus').innerHTML = `<p style="color: var(--error);">Erro ao carregar status: ${err.message}</p>`;
+            }
+        }
+
+        function showSyncLog(type, result, error) {
+            const logSection = document.getElementById('syncLogSection');
+            const logEl = document.getElementById('syncLog');
+            logSection.style.display = 'block';
+
+            const now = new Date().toLocaleTimeString('pt-BR');
+            const typeName = type === 'pull' ? 'Pull (Supabase → Local)' : 'Push (Local → Supabase)';
+
+            if (error) {
+                logEl.innerHTML = `
+                    <div class="sync-log-entry sync-error">
+                        <div class="log-header">❌ ${typeName} — ${now}</div>
+                        <p>${error}</p>
+                    </div>
+                ` + logEl.innerHTML;
+                return;
+            }
+
+            const tableNames = {
+                unidades: 'Unidades', responsaveis: 'Responsáveis', tecnicos: 'Técnicos',
+                tipos_checklist: 'Tipos', locais: 'Locais', itens_config: 'Itens', unidade_locais: 'Unidade-Locais'
+            };
+
+            logEl.innerHTML = `
+                <div class="sync-log-entry sync-success">
+                    <div class="log-header">✅ ${typeName} — ${now}</div>
+                    <div class="log-tables">
+                        ${Object.entries(result.tables || {}).map(([key, count]) =>
+                `<span class="tag">${tableNames[key] || key}: ${count}</span>`
+            ).join(' ')}
+                    </div>
+                    ${result.errors && result.errors.length > 0 ? `
+                        <div class="log-errors">
+                            ⚠️ ${result.errors.length} erro(s): ${result.errors.join(', ')}
+                        </div>
+                    ` : ''}
+                </div>
+            ` + logEl.innerHTML;
         }
 
         async function loadSelectOptions(section) {
